@@ -3,9 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Vocx" />
   <meta name="theme-color" content="#ff6262" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./sys/icon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./sys/apple-touch-icon.png" />
   <title>Vocx &amp; Dojo</title>
   <style>
     @font-face {
@@ -47,6 +52,8 @@
       --text-white: #ffffff;
       --text-cream: #fff5f5;
       --avatar-teal: #5db4b6;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     * {
@@ -59,33 +66,45 @@
       -webkit-user-select: none;
     }
 
-    html, body {
+    html {
       width: 100%;
       height: 100%;
+      min-height: -webkit-fill-available;
+      overflow: hidden;
+      background-color: #1e1e1e;
+      overscroll-behavior: none;
+    }
+
+    body {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      min-height: -webkit-fill-available;
       overflow: hidden;
       background-color: #1e1e1e;
       font-family: 'ABCGintoDiscordNord', 'MPLUS1-Bold', -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
       overscroll-behavior: none;
     }
 
     /* App Container:
        - No phone frame/bezel.
-       - Portrait viewports: full-screen (100vw x 100dvh), flexibly responsive.
-       - Landscape / PC viewports: full-height vertical screen centered horizontally. */
+       - Portrait viewports: fixed full-bleed (inset: 0) covering top & bottom safe areas completely.
+       - Landscape / PC viewports: full-height vertical column anchored top: 0 to bottom: 0. */
     #phone-viewport {
       position: relative;
-      width: 100vw;
-      height: 100dvh;
+      width: 100%;
+      height: 100%;
       background-color: var(--bg-coral);
       overflow: hidden;
     }
 
     @media (min-aspect-ratio: 4/5) and (min-width: 520px) {
       #phone-viewport {
-        height: 100dvh;
+        height: 100%;
         width: clamp(360px, 52dvh, 480px);
         max-width: 100vw;
       }
@@ -93,11 +112,14 @@
 
     @media (max-aspect-ratio: 4/5), (max-width: 519px) {
       html, body {
-        background-color: var(--bg-coral);
+        /* Top half coral, bottom half dark so status bar & home indicator safe areas are always seamless */
+        background: linear-gradient(180deg, var(--bg-coral) 0%, var(--bg-coral) 50%, var(--bg-dark) 50%, var(--bg-dark) 100%);
       }
       #phone-viewport {
-        width: 100vw;
-        height: 100dvh;
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
       }
     }
 
@@ -122,7 +144,8 @@
       top: 0;
       left: 0;
       right: 0;
-      height: clamp(92px, 15.5dvh, 136px);
+      padding-top: var(--safe-top);
+      height: calc(clamp(88px, 14.5dvh, 132px) + var(--safe-top));
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -169,8 +192,8 @@
       width: 100%;
       overflow-y: auto;
       overflow-x: hidden;
-      padding-top: clamp(104px, 17.5dvh, 149px);
-      padding-bottom: clamp(115px, 16.5dvh, 145px);
+      padding-top: calc(clamp(100px, 16.5dvh, 145px) + var(--safe-top));
+      padding-bottom: calc(clamp(115px, 16dvh, 145px) + var(--safe-bottom));
       scrollbar-width: none;
       -ms-overflow-style: none;
       -webkit-overflow-scrolling: touch;
@@ -353,10 +376,10 @@
     .mypage-body {
       flex: 1;
       width: 100%;
-      padding-top: clamp(116px, 19.5dvh, 166px);
+      padding-top: calc(clamp(112px, 18.5dvh, 162px) + var(--safe-top));
       padding-left: 16px;
       padding-right: 16px;
-      padding-bottom: clamp(110px, 15dvh, 130px);
+      padding-bottom: calc(clamp(110px, 15dvh, 130px) + var(--safe-bottom));
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -483,20 +506,32 @@
       transform: translateX(33px);
     }
 
-    /* Bottom Footer Navigation (Home & Mypage) */
+    /* Bottom Footer Navigation (Home & Mypage) - Grounded flush to the physical bottom */
     .bottom-footer {
       position: absolute;
       left: 0;
       right: 0;
       bottom: 0;
-      height: clamp(92px, 13.5dvh, 115px);
+      min-height: calc(clamp(88px, 12.5dvh, 112px) + var(--safe-bottom));
       background-color: var(--bg-dark);
       border-radius: 55px 55px 0 0;
       z-index: 30;
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      padding: clamp(18px, 3dvh, 25px) 28% 0 28%;
+      padding: clamp(20px, 3dvh, 25px) 28% calc(18px + var(--safe-bottom)) 28%;
+      box-shadow: 0 120px 0 0 var(--bg-dark);
+    }
+
+    .bottom-footer::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 99%;
+      height: calc(140px + var(--safe-bottom));
+      background-color: var(--bg-dark);
+      pointer-events: none;
     }
 
     .nav-btn {
@@ -521,7 +556,7 @@
 
     .quiz-topbar {
       position: absolute;
-      top: clamp(36px, 9dvh, 78px);
+      top: calc(clamp(28px, 7.5dvh, 68px) + var(--safe-top));
       left: 24px;
       right: 27px;
       height: 26px;
@@ -592,13 +627,14 @@
       flex-shrink: 0;
     }
 
-    /* Quiz Draggable Main Dark Card */
+    /* Quiz Draggable Main Dark Card - Grounded flush to the physical bottom */
     .quiz-sheet {
       position: absolute;
       left: 0;
       right: 0;
-      top: clamp(86px, 16.8dvh, 144px);
+      top: calc(clamp(78px, 15.5dvh, 136px) + var(--safe-top));
       bottom: 0;
+      padding-bottom: var(--safe-bottom);
       background-color: var(--bg-dark);
       border-radius: 55px 55px 0 0;
       display: flex;
@@ -608,6 +644,18 @@
       transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
       will-change: transform;
       touch-action: none;
+      box-shadow: 0 120px 0 0 var(--bg-dark);
+    }
+
+    .quiz-sheet::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 99%;
+      height: calc(140px + var(--safe-bottom));
+      background-color: var(--bg-dark);
+      pointer-events: none;
     }
 
     .quiz-sheet.dragging {
@@ -920,12 +968,12 @@
       left: 0;
       right: 0;
       bottom: 0;
-      height: clamp(260px, 36dvh, 310px);
+      min-height: calc(clamp(260px, 36dvh, 310px) + var(--safe-bottom));
       background: rgba(173, 179, 188, 0.92);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-radius: 26px 26px 0 0;
-      padding: 12px 4px 10px 4px;
+      padding: 12px 4px calc(10px + var(--safe-bottom)) 4px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -1010,7 +1058,7 @@
       right: 36px;
       max-width: 340px;
       margin: 0 auto;
-      bottom: clamp(28px, 7dvh, 61px);
+      bottom: calc(clamp(26px, 6.5dvh, 58px) + var(--safe-bottom));
       height: 71.5px;
       border-radius: 68px;
       background-color: var(--surface-btn);
@@ -1075,11 +1123,11 @@
       left: 0;
       right: 0;
       bottom: 0;
-      min-height: 280px;
+      min-height: calc(280px + var(--safe-bottom));
       background-color: var(--bg-dark);
       border-radius: 55px 55px 0 0;
-      box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.55);
-      padding: 31px 28px 36px 28px;
+      box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.55), 0 120px 0 0 var(--bg-dark);
+      padding: 31px 28px calc(36px + var(--safe-bottom)) 28px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1087,6 +1135,17 @@
       z-index: 55;
       transform: translateY(105%);
       transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .check-sheet::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 99%;
+      height: calc(140px + var(--safe-bottom));
+      background-color: var(--bg-dark);
+      pointer-events: none;
     }
 
     .check-sheet.open {
@@ -2707,6 +2766,13 @@
       switchTab(appState.activeTab || 'home', false);
       renderHomeUnits();
       tryFetchLiveFiles();
+
+      /* Register PWA Service Worker */
+      if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+      }
     })();
   </script>
 </body>
