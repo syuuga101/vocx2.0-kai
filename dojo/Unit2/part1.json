@@ -1,0 +1,478 @@
+{
+  "course_name": "International Communication I (2026-後期-火2-他)-40480",
+  "quiz_title": "UNIT 2 QUIZ - PART 1 = 10 POINTS",
+  "sub_title": "Unit 2 Quiz - Part 1",
+  "instructor": "練習問題",
+  "time_limit": "10 分",
+  "deadline": "2026-10-13 12:20",
+  "sections": [
+    {
+      "id": "sec1",
+      "type": "matching",
+      "title": "SECTION 1: MATCH EACH DEFINITION ON THE LEFT (1-5) WITH THE CORRECT WORD FROM THE LIST ON THE RIGHT. (5 POINTS)",
+      "options": [
+        "未解答",
+        "difficulty",
+        "colleague",
+        "schedule",
+        "habit",
+        "swap",
+        "aim",
+        "chance",
+        "celebrate",
+        "success",
+        "direction",
+        "achieve",
+        "challenge",
+        "makeshift",
+        "anxious",
+        "careless",
+        "confident",
+        "cheerful",
+        "hopeful",
+        "lazy",
+        "nervous",
+        "event",
+        "forget",
+        "lost",
+        "weight",
+        "gain",
+        "seem",
+        "spill",
+        "fault",
+        "begin",
+        "moment",
+        "reach",
+        "finally",
+        "fail"
+      ],
+      "questions": [
+        {
+          "id": 1,
+          "text": "something that is hard to do or overcome",
+          "answer": "difficulty",
+          "explanation": "教科書 Unit 2-C (p.24) Ex.2: difficulty = something that is hard to do or overcome"
+        },
+        {
+          "id": 2,
+          "text": "a person that you work with, especially in a profession or business",
+          "answer": "colleague",
+          "explanation": "教科書 Unit 2-A (p.20): colleague = 同僚"
+        },
+        {
+          "id": 3,
+          "text": "something that you do often and regularly, sometimes without thinking about it",
+          "answer": "habit",
+          "explanation": "教科書 Unit 2-B (p.22): habit = 習慣・癖"
+        },
+        {
+          "id": 4,
+          "text": "a list of things to be done each day, week, or month",
+          "answer": "schedule",
+          "explanation": "教科書 Unit 2-C (p.24) Ex.2: schedule = a list of things to be done each day, week, or month"
+        },
+        {
+          "id": 5,
+          "text": "to give something to someone and receive something in return",
+          "answer": "swap",
+          "explanation": "教科書 Unit 2-D (p.26): swap = 交換する"
+        },
+        {
+          "id": 6,
+          "text": "something important that is happening",
+          "answer": "event",
+          "explanation": "教科書 Unit 2-C (p.24) Ex.2: event = something important that is happening"
+        },
+        {
+          "id": 7,
+          "text": "to be unable to remember",
+          "answer": "forget",
+          "explanation": "教科書 Unit 2-C (p.24) Ex.2: forget = to be unable to remember"
+        },
+        {
+          "id": 8,
+          "text": "unable to be found",
+          "answer": "lost",
+          "explanation": "教科書 Unit 2-C (p.24) Ex.2: lost = unable to be found"
+        },
+        {
+          "id": 9,
+          "text": "how heavy a person or thing is",
+          "answer": "weight",
+          "explanation": "教科書 Unit 2-C (p.24) Ex.2: weight = how heavy a person or thing is"
+        },
+        {
+          "id": 10,
+          "text": "to increase in size or number",
+          "answer": "gain",
+          "explanation": "教科書 Unit 2-C (p.24) Ex.2: gain = to increase in size or number"
+        },
+        {
+          "id": 11,
+          "text": "to appear a certain way",
+          "answer": "seem",
+          "explanation": "教科書 Unit 2-C (p.24) Ex.2: seem = to appear a certain way"
+        },
+        {
+          "id": 12,
+          "text": "a task or situation that tests someone's abilities",
+          "answer": "challenge",
+          "explanation": "教科書 Unit 2-A (p.20): challenge = 難題・挑戦"
+        },
+        {
+          "id": 13,
+          "text": "to successfully reach a desired goal or result by effort",
+          "answer": "achieve",
+          "explanation": "教科書 Unit 2-A (p.20): achieve = 達成する"
+        },
+        {
+          "id": 14,
+          "text": "the accomplishment of an aim or purpose",
+          "answer": "success",
+          "explanation": "教科書 Unit 2-A (p.20): success = 成功"
+        },
+        {
+          "id": 15,
+          "text": "to do something enjoyable for an important occasion",
+          "answer": "celebrate",
+          "explanation": "教科書 Unit 2-A (p.20): celebrate = 祝う"
+        },
+        {
+          "id": 16,
+          "text": "a purpose or intention; a desired outcome",
+          "answer": "aim",
+          "explanation": "教科書 Unit 2-A (p.20): aim = 目的・狙い"
+        },
+        {
+          "id": 17,
+          "text": "a possibility of something happening",
+          "answer": "chance",
+          "explanation": "教科書 Unit 2-A (p.20): chance = 可能性・機会"
+        },
+        {
+          "id": 18,
+          "text": "a physical path or the way in which a project is developing",
+          "answer": "direction",
+          "explanation": "教科書 Unit 2-A (p.20) NOTE: direction = 方向・方角"
+        },
+        {
+          "id": 19,
+          "text": "something created to use for a short period of time, for a specific purpose",
+          "answer": "makeshift",
+          "explanation": "教科書 Unit 2-A (p.21) NOTE: makeshift = 一時しのぎの・間に合わせの"
+        },
+        {
+          "id": 20,
+          "text": "feeling worried, uneasy, or nervous about an uncertain event",
+          "answer": "anxious",
+          "explanation": "教科書 Unit 2-B (p.22): anxious = 不安な・心配して"
+        },
+        {
+          "id": 21,
+          "text": "not giving enough attention or thought to avoiding errors or harm",
+          "answer": "careless",
+          "explanation": "教科書 Unit 2-B (p.22): careless = 不注意な・うっかりした"
+        },
+        {
+          "id": 22,
+          "text": "feeling certainty about your own abilities",
+          "answer": "confident",
+          "explanation": "教科書 Unit 2-B (p.22): confident = 自信がある"
+        },
+        {
+          "id": 23,
+          "text": "noticeably happy and optimistic",
+          "answer": "cheerful",
+          "explanation": "教科書 Unit 2-B (p.22): cheerful = 陽気な・明るい"
+        },
+        {
+          "id": 24,
+          "text": "feeling optimism about a future event",
+          "answer": "hopeful",
+          "explanation": "教科書 Unit 2-B (p.22): hopeful = 希望を持っている"
+        },
+        {
+          "id": 25,
+          "text": "unwilling to work or use energy",
+          "answer": "lazy",
+          "explanation": "教科書 Unit 2-B (p.22): lazy = 怠惰な・面倒くさがりの"
+        },
+        {
+          "id": 26,
+          "text": "easily agitated or alarmed; tending to feel worried before an exam",
+          "answer": "nervous",
+          "explanation": "教科書 Unit 2-B (p.22): nervous = 緊張している・神経質な"
+        },
+        {
+          "id": 27,
+          "text": "to accidentally allow liquid to flow over the edge of its container",
+          "answer": "spill",
+          "explanation": "教科書 Unit 2-D (p.26): spill = こぼす"
+        },
+        {
+          "id": 28,
+          "text": "responsibility for a mistake, accident, or misfortune",
+          "answer": "fault",
+          "explanation": "教科書 Unit 2-D (p.26): fault = 責任・過失（せい）"
+        },
+        {
+          "id": 29,
+          "text": "to start or perform the first part of an action",
+          "answer": "begin",
+          "explanation": "教科書 Unit 2-D (p.26): begin = 始める・始まる"
+        },
+        {
+          "id": 30,
+          "text": "a very brief period of time",
+          "answer": "moment",
+          "explanation": "教科書 Unit 2-D (p.26): moment = 少しの間・瞬間"
+        },
+        {
+          "id": 31,
+          "text": "to arrive at a place or destination",
+          "answer": "reach",
+          "explanation": "教科書 Unit 2-D (p.26): reach = 到達する・着く"
+        },
+        {
+          "id": 32,
+          "text": "after a long time, typically involving difficulty or delay",
+          "answer": "finally",
+          "explanation": "教科書 Unit 2-D (p.26): finally = ついに・ようやく"
+        },
+        {
+          "id": 33,
+          "text": "to be unsuccessful in achieving a goal or passing a test",
+          "answer": "fail",
+          "explanation": "教科書 Unit 2-D (p.26): fail = 失敗する・不合格になる"
+        }
+      ]
+    },
+    {
+      "id": "sec2",
+      "type": "choice",
+      "title": "SECTION 2: CHOOSE THE BEST ANSWER TO EACH QUESTION. (5 POINTS)",
+      "questions": [
+        {
+          "id": 1,
+          "text": "I have a habit of biting my nails when I feel anxious.",
+          "choices": [
+            "Why don't you try chewing gum instead?",
+            "Why don't you try biting them harder?",
+            "Why don't you try to be lazy instead?"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-B (p.22) Focus: 緊張や不安時の癖に対する代替行動のアドバイスとして「Why don't you try chewing gum instead?」が適切。"
+        },
+        {
+          "id": 2,
+          "text": "Which of the following sentences is punctuated correctly?",
+          "choices": [
+            "When I have a big test coming up I feel nervous.",
+            "When I have a big test coming up, I feel nervous.",
+            "I feel nervous, when I have a big test coming up."
+          ],
+          "answer": 1,
+          "explanation": "教科書 Unit 2-B (p.23) Grammar: when節が主節の前に来る場合は、when節の直後にカンマを置きます。"
+        },
+        {
+          "id": 3,
+          "text": "She had difficulty with the test questions because she _________ for the exam.",
+          "choices": [
+            "hasn't studied",
+            "hadn't studied",
+            "wasn't studying"
+          ],
+          "answer": 1,
+          "explanation": "教科書 Unit 2-C (p.24-25): 過去の困難（had difficulty）より前に勉強していなかったことを表すため、過去完了（hadn't studied）を使います。"
+        },
+        {
+          "id": 4,
+          "text": "When he arrived at the office, he _________ at his schedule.",
+          "choices": [
+            "had looked",
+            "looked",
+            "has looked"
+          ],
+          "answer": 1,
+          "explanation": "教科書 Unit 2-C (p.25) Ex.7-5: 到着した直後に行動した過去の連続動作には、単純過去形（looked）を使います。"
+        },
+        {
+          "id": 5,
+          "text": "We _________ for days when we finally reached the end of the path.",
+          "choices": [
+            "had been walking",
+            "have been walking",
+            "are walking"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.26) Ex.4: 過去の時点（reached）まで一定期間続いていた動作を表すため、過去完了進行形（had been walking）を用います。"
+        },
+        {
+          "id": 6,
+          "text": "I have a habit of talking a lot when I'm nervous.",
+          "choices": [
+            "Why don't you try breathing slowly instead?",
+            "Why don't you try talking louder instead?",
+            "Why don't you try skipping class instead?"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-B (p.22) Focus: 緊張して喋りすぎてしまう癖へのアドバイス「Why don't you try breathing slowly instead?」"
+        },
+        {
+          "id": 7,
+          "text": "I have a habit of being lazy when I'm tired.",
+          "choices": [
+            "Why don't you try going to bed earlier?",
+            "Why don't you try staying up all night?",
+            "Why don't you try forgetting your schedule?"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-B (p.22) Focus: 疲れて怠けてしまう癖へのアドバイス「Why don't you try going to bed earlier?」"
+        },
+        {
+          "id": 8,
+          "text": "He felt anxious all day because he _________ to lock his front door.",
+          "choices": [
+            "had forgotten",
+            "has forgotten",
+            "forgets"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-C (p.25) Ex.7-2: 不安に感じた（felt）より前に鍵を閉め忘れたため、過去完了形 had forgotten を使います。"
+        },
+        {
+          "id": 9,
+          "text": "He gained weight because he _________ a lot over the holidays.",
+          "choices": [
+            "had eaten",
+            "has eaten",
+            "eats"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-C (p.25) Ex.7-3: 体重が増えた（gained）より前にたくさん食べていたため、過去完了形 had eaten を使います。"
+        },
+        {
+          "id": 10,
+          "text": "She _________ nervous when she spoke to the interviewer.",
+          "choices": [
+            "felt",
+            "has felt",
+            "feels"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-C (p.25) Ex.7-1: 面接官と話した時に同時に緊張したため、単純過去形 felt を使います。"
+        },
+        {
+          "id": 11,
+          "text": "I _________ the garbage when the school bell finally rang.",
+          "choices": [
+            "had been collecting",
+            "have been collecting",
+            "am collecting"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.27) Ex.4-1: ベルが鳴った時点まで続けていた動作を過去完了進行形 had been collecting で表します。"
+        },
+        {
+          "id": 12,
+          "text": "Jack _________ to find his schedule for a moment before the meeting began.",
+          "choices": [
+            "had been trying",
+            "has been trying",
+            "is trying"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.27) Ex.4-3: 会議が始まる前まで続いていた動作を過去完了進行形 had been trying で表します。"
+        },
+        {
+          "id": 13,
+          "text": "Petra _________ baseball cards when the ball hit her in the face.",
+          "choices": [
+            "had been trading",
+            "has been trading",
+            "trades"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.27) Ex.4-4: ボールが当たるまで続いていた動作を過去完了進行形 had been trading で表します。"
+        },
+        {
+          "id": 14,
+          "text": "My teacher _________ before my classmate spilled his juice.",
+          "choices": [
+            "had been laughing",
+            "has been laughing",
+            "laughs"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.27) Ex.4-5: クラスメートがジュースをこぼす前まで笑っていたことを過去完了進行形 had been laughing で表します。"
+        },
+        {
+          "id": 15,
+          "text": "The thousand-piece puzzle was a _________ to finish. I never put together so many pieces before.",
+          "choices": [
+            "challenge",
+            "colleague",
+            "direction"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-A (p.20) Ex.2-1: 1000ピースのパズルを完成させるのは難題（challenge）だった。"
+        },
+        {
+          "id": 16,
+          "text": "There is a _________ that the plane will leave later than expected.",
+          "choices": [
+            "chance",
+            "celebrate",
+            "achieve"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-A (p.20) Ex.2-5: There is a chance that ~（〜という可能性がある）。"
+        },
+        {
+          "id": 17,
+          "text": "I'm lost. Can you tell me which _________ to go? I need to get to my math class.",
+          "choices": [
+            "direction",
+            "aim",
+            "success"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-A (p.20) Ex.2-6: which direction to go（どの方向へ行けばよいか）。"
+        },
+        {
+          "id": 18,
+          "text": "Sarah says it isn't her _________ her brother is crying. He is hungry and needs to be fed.",
+          "choices": [
+            "fault",
+            "spill",
+            "moment"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.26) Ex.2-3: it isn't her fault（彼女のせいではない）。"
+        },
+        {
+          "id": 19,
+          "text": "Let's _________ video games. You lend me Lock & Load, and I'll give you Grand Prix.",
+          "choices": [
+            "swap",
+            "fail",
+            "spill"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.26) Ex.2-7: swap video games（テレビゲームを交換する）。"
+        },
+        {
+          "id": 20,
+          "text": "I _________ learned my new colleague's name. I had been calling him Alan instead of Aaron!",
+          "choices": [
+            "finally",
+            "carelessly",
+            "nervously"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.26) Ex.2-8: finally（ついに・ようやく新しい同僚の名前を覚えた）。"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "course_name": "International Communication I (2026-後期-火2-他)-40480",
+  "quiz_title": "UNIT 2 QUIZ - PART 2 = 10 POINTS",
+  "sub_title": "Unit 2 Quiz - Part 2",
+  "instructor": "練習問題",
+  "time_limit": "10 分",
+  "deadline": "2026-10-13 12:30",
+  "sections": [
+    {
+      "id": "sec1",
+      "type": "choice",
+      "title": "SECTION 1: SELECT THE CORRECT ANSWER. (5 POINTS)",
+      "questions": [
+        {
+          "id": 1,
+          "text": "Jenny didn't _________ for the meeting today because her car broke down.",
+          "choices": [
+            "turn up",
+            "turn down"
+          ],
+          "answer": 0,
+          "explanation": "turn up = arrive, appear (姿を現す・出席する) [教科書 Unit 2-C p.25 / PDF]"
+        },
+        {
+          "id": 2,
+          "text": "I had to _________ the invitation to the party because I was sick.",
+          "choices": [
+            "turn around",
+            "turn down"
+          ],
+          "answer": 1,
+          "explanation": "turn down = decline, say no to an offer (断る・辞退する) [教科書 Unit 2-C p.25 / PDF]"
+        },
+        {
+          "id": 3,
+          "text": "Don't worry, I'm sure everything will _________ fine in the end.",
+          "choices": [
+            "turn out",
+            "turn in"
+          ],
+          "answer": 0,
+          "explanation": "turn out = to have a particular result, to be the case (結果として〜になる) [教科書 Unit 2-C p.25 / PDF]"
+        },
+        {
+          "id": 4,
+          "text": "The team was losing, but they managed to _________ the game in the second half.",
+          "choices": [
+            "turn around",
+            "turn off"
+          ],
+          "answer": 0,
+          "explanation": "turn around = for the outcome to be changed for the better (事態を好転させる・逆転させる) [教科書 Unit 2-C p.25 / PDF]"
+        },
+        {
+          "id": 5,
+          "text": "Did you _________ your homework to the teacher on time?",
+          "choices": [
+            "turn in",
+            "turn up"
+          ],
+          "answer": 0,
+          "explanation": "turn in = submit (提出する) [PDF '_turn_ phrasal verbs']"
+        },
+        {
+          "id": 6,
+          "text": "What time do you usually _________ at night?",
+          "choices": [
+            "turn in",
+            "turn out"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.1: turn in = 1) go to bed (夜、寝床につく・就寝する)"
+        },
+        {
+          "id": 7,
+          "text": "Did your last birthday party _________ okay?",
+          "choices": [
+            "turn out",
+            "turn down"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.2: turn out = have a particular result (結果として〜になる・うまくいく)"
+        },
+        {
+          "id": 8,
+          "text": "Have you ever _________ an offer or a gift?",
+          "choices": [
+            "turned down",
+            "turned up"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.3: turn down = decline; say 'no' to something (申し出や贈り物を断る)"
+        },
+        {
+          "id": 9,
+          "text": "Do you always _________ your homework on time?",
+          "choices": [
+            "turn in",
+            "turn off"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.4: turn in = 2) submit (宿題などを提出する)"
+        },
+        {
+          "id": 10,
+          "text": "Do you usually _________ for social events early or late?",
+          "choices": [
+            "turn up",
+            "turn in"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.5: turn up = 1) arrive (イベントなどに姿を現す・到着する)"
+        },
+        {
+          "id": 11,
+          "text": "Have you ever _________ a difficult situation?",
+          "choices": [
+            "turned around",
+            "turned down"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.6: turn around = for the outcome of something to be changed for the better (困難な状況を好転させる)"
+        },
+        {
+          "id": 12,
+          "text": "What is something you have lost that _________ in an unexpected place?",
+          "choices": [
+            "turned up",
+            "turned out"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.7: turn up = 2) to appear after being lost (なくした物がひょっこり出てくる・見つかる)"
+        },
+        {
+          "id": 13,
+          "text": "Does smoking _________ you _________?",
+          "choices": [
+            "turn / off",
+            "turn / in"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.8: turn (someone) off = make you less interested in something or someone (興味を失わせる・嫌悪感を抱かせる)"
+        },
+        {
+          "id": 14,
+          "text": "Our business didn't do well, but if we make a better plan, I think we can _________ next year.",
+          "choices": [
+            "turn it around",
+            "turn it down"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-C (p.25) Ex.9-1: turn it around = 業績や事態を好転させる"
+        },
+        {
+          "id": 15,
+          "text": "We went to the park on Saturday, but no one was there. It _________ that my schedule was wrong.",
+          "choices": [
+            "turned out",
+            "turned up"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-C (p.25) Ex.9-2: It turned out that ~ (〜ということが判明した・結果として〜だった)"
+        },
+        {
+          "id": 16,
+          "text": "I have to _________ your delicious cake because I have gained too much weight this year!",
+          "choices": [
+            "turn down",
+            "turn in"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-C (p.25) Ex.9-3: turn down = 断る・遠慮する"
+        },
+        {
+          "id": 17,
+          "text": "His friends cut the cord, and he took off! It _________ his plan worked!",
+          "choices": [
+            "turned out",
+            "turned down"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-D (p.27) Ex.5-3: It turned out (that) his plan worked! (彼の計画がうまくいったと判明した)"
+        },
+        {
+          "id": 18,
+          "text": "Which phrasal verb means both 'to go to bed' and 'to submit'?",
+          "choices": [
+            "turn in",
+            "turn up"
+          ],
+          "answer": 0,
+          "explanation": "PDF Definition: turn in = 1) go to bed, 2) submit"
+        },
+        {
+          "id": 19,
+          "text": "Which phrasal verb means 'to make you less interested in something or someone'?",
+          "choices": [
+            "turn off",
+            "turn out"
+          ],
+          "answer": 0,
+          "explanation": "PDF Definition: turn off = make you less interested in something or someone"
+        },
+        {
+          "id": 20,
+          "text": "He has a bad grade in math, but if he studies harder, he can _________.",
+          "choices": [
+            "turn it around",
+            "turn it off"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 2-C (p.25) Expressions: turn it around = 状況を好転させる・挽回する"
+        }
+      ]
+    }
+  ]
+}

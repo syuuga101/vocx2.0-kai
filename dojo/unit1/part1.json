@@ -1,0 +1,493 @@
+{
+  "course_name": "International Communication I (2026-後期-火2-他)-40480",
+  "quiz_title": "UNIT 1 QUIZ - PART 1 = 10 POINTS",
+  "sub_title": "Unit 1 Quiz - Part 1",
+  "instructor": "練習問題",
+  "time_limit": "10 分",
+  "deadline": "2026-10-06 12:20",
+  "sections": [
+    {
+      "id": "sec1",
+      "type": "matching",
+      "title": "SECTION 1: MATCH EACH DEFINITION ON THE LEFT (1-5) WITH THE CORRECT WORD FROM THE LIST ON THE RIGHT. (5 POINTS)",
+      "options": [
+        "未解答",
+        "curriculum",
+        "attendance",
+        "individual",
+        "encourage",
+        "experiment",
+        "interview",
+        "salary",
+        "marry",
+        "private",
+        "stressful",
+        "apply",
+        "consider",
+        "hear",
+        "manage",
+        "organize",
+        "concentrate",
+        "abroad",
+        "complain",
+        "touching",
+        "touched",
+        "convincing",
+        "convinced",
+        "satisfying",
+        "satisfied",
+        "disappointing",
+        "disappointed",
+        "frightening",
+        "frightened",
+        "tiring",
+        "tired",
+        "disgusting",
+        "disgusted",
+        "fascinating",
+        "fascinated",
+        "program",
+        "attend",
+        "charity",
+        "incredible",
+        "willpower",
+        "make a difference",
+        "lose track",
+        "local"
+      ],
+      "questions": [
+        {
+          "id": 1,
+          "text": "describing something that causes strong feelings of thankfulness or joy",
+          "answer": "touching",
+          "explanation": "教科書 Unit 1-C (p.12): touched / touching"
+        },
+        {
+          "id": 2,
+          "text": "to make a formal request for a job or education opportunity",
+          "answer": "apply",
+          "explanation": "教科書 Unit 1-B (p.10): apply = to ask for something, usually in writing"
+        },
+        {
+          "id": 3,
+          "text": "being able to cause someone to believe something is true",
+          "answer": "convincing",
+          "explanation": "教科書 Unit 1-C (p.12): convinced / convincing"
+        },
+        {
+          "id": 4,
+          "text": "the number of people in a class or at an event",
+          "answer": "attendance",
+          "explanation": "教科書 Unit 1-A (p.8): attendance = the number of people who go to an event"
+        },
+        {
+          "id": 5,
+          "text": "belonging to a nearby area",
+          "answer": "local",
+          "explanation": "教科書 Unit 1-D (p.14): local = relating to the area around you"
+        },
+        {
+          "id": 6,
+          "text": "subjects taught in school, college, or academy",
+          "answer": "curriculum",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: curriculum = subjects taught in school, college, or academy"
+        },
+        {
+          "id": 7,
+          "text": "separate from the other people or things in a group",
+          "answer": "individual",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: individual = separate from the other people or things in a group"
+        },
+        {
+          "id": 8,
+          "text": "to make someone more likely to do something",
+          "answer": "encourage",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: encourage = to make someone more likely to do something"
+        },
+        {
+          "id": 9,
+          "text": "a test, usually scientific, done to learn something",
+          "answer": "experiment",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: experiment = a test, usually scientific, done to learn something"
+        },
+        {
+          "id": 10,
+          "text": "a meeting to see if someone is suitable for a job or position",
+          "answer": "interview",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: interview = a meeting to see if someone is suitable for a job or position"
+        },
+        {
+          "id": 11,
+          "text": "a fixed amount of money received by an employee",
+          "answer": "salary",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: salary = a fixed amount of money received by an employee"
+        },
+        {
+          "id": 12,
+          "text": "to begin a relationship as a husband or a wife",
+          "answer": "marry",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: marry = to begin a relationship as a husband or a wife"
+        },
+        {
+          "id": 13,
+          "text": "only for one person or specific group",
+          "answer": "private",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: private = only for one person or specific group"
+        },
+        {
+          "id": 14,
+          "text": "making you feel worried and nervous",
+          "answer": "stressful",
+          "explanation": "教科書 Unit 1-A (p.8) Ex.2: stressful = making you feel worried and nervous"
+        },
+        {
+          "id": 15,
+          "text": "to control a group of people",
+          "answer": "manage",
+          "explanation": "教科書 Unit 1-B (p.10) Ex.2: manage = to control a group of people"
+        },
+        {
+          "id": 16,
+          "text": "to be told some information",
+          "answer": "hear",
+          "explanation": "教科書 Unit 1-B (p.10) Ex.2: hear = to be told some information"
+        },
+        {
+          "id": 17,
+          "text": "to plan or arrange",
+          "answer": "organize",
+          "explanation": "教科書 Unit 1-B (p.10) Ex.2: organize = to plan or arrange"
+        },
+        {
+          "id": 18,
+          "text": "to think about carefully",
+          "answer": "consider",
+          "explanation": "教科書 Unit 1-B (p.10) Ex.2: consider = to think about carefully"
+        },
+        {
+          "id": 19,
+          "text": "to direct your attention or effort toward a particular activity",
+          "answer": "concentrate",
+          "explanation": "教科書 Unit 1-B (p.10): concentrate = 集中する"
+        },
+        {
+          "id": 20,
+          "text": "in or to a foreign country",
+          "answer": "abroad",
+          "explanation": "教科書 Unit 1-B (p.10): abroad = 海外へ・海外で"
+        },
+        {
+          "id": 21,
+          "text": "to say that you are not satisfied with something",
+          "answer": "complain",
+          "explanation": "教科書 Unit 1-B (p.10): complain = 不平・文句を言う"
+        },
+        {
+          "id": 22,
+          "text": "extremely interesting and attractive",
+          "answer": "fascinating",
+          "explanation": "教科書 Unit 1-C (p.12): fascinated / fascinating"
+        },
+        {
+          "id": 23,
+          "text": "extremely unpleasant or unacceptable",
+          "answer": "disgusting",
+          "explanation": "教科書 Unit 1-C (p.12): disgusted / disgusting"
+        },
+        {
+          "id": 24,
+          "text": "making you feel pleased by providing what you need or want",
+          "answer": "satisfying",
+          "explanation": "教科書 Unit 1-C (p.12): satisfied / satisfying"
+        },
+        {
+          "id": 25,
+          "text": "not as good as you had hoped or expected",
+          "answer": "disappointing",
+          "explanation": "教科書 Unit 1-C (p.12): disappointed / disappointing"
+        },
+        {
+          "id": 26,
+          "text": "making you feel fear or anxiety",
+          "answer": "frightening",
+          "explanation": "教科書 Unit 1-C (p.12): frightened / frightening"
+        },
+        {
+          "id": 27,
+          "text": "making you feel in need of rest or sleep",
+          "answer": "tiring",
+          "explanation": "教科書 Unit 1-C (p.12): tired / tiring"
+        },
+        {
+          "id": 28,
+          "text": "a plan of events or activities",
+          "answer": "program",
+          "explanation": "教科書 Unit 1-D (p.14) Ex.2: program = a plan of events or activities"
+        },
+        {
+          "id": 29,
+          "text": "to go to an event",
+          "answer": "attend",
+          "explanation": "教科書 Unit 1-D (p.14) Ex.2: attend = to go to an event"
+        },
+        {
+          "id": 30,
+          "text": "an organization that gives money, food, or help to people who need it",
+          "answer": "charity",
+          "explanation": "教科書 Unit 1-D (p.14) Ex.2: charity = an organization that gives money, food, or help to people who need it"
+        },
+        {
+          "id": 31,
+          "text": "very good, large, or amazing",
+          "answer": "incredible",
+          "explanation": "教科書 Unit 1-D (p.14) Ex.2: incredible = very good, large, or amazing"
+        },
+        {
+          "id": 32,
+          "text": "the ability or capacity to make oneself do difficult things",
+          "answer": "willpower",
+          "explanation": "教科書 Unit 1-D (p.14) Ex.2: willpower = the ability or capacity to make oneself do difficult things"
+        },
+        {
+          "id": 33,
+          "text": "to have an effect on a situation",
+          "answer": "make a difference",
+          "explanation": "教科書 Unit 1-D (p.14) Ex.2: make a difference = to have an effect on a situation"
+        },
+        {
+          "id": 34,
+          "text": "to not know what is happening to someone or something",
+          "answer": "lose track",
+          "explanation": "教科書 Unit 1-D (p.14) Ex.2: lose track = to not know what is happening to someone or something"
+        }
+      ]
+    },
+    {
+      "id": "sec2",
+      "type": "choice",
+      "title": "SECTION 2: CHOOSE THE BEST ANSWER TO EACH QUESTION. (5 POINTS)",
+      "questions": [
+        {
+          "id": 1,
+          "text": "John: Hey, Maria. How have you been?",
+          "choices": [
+            "Maria: I've been doing well. I can't consider.",
+            "Maria: I've been doing well. I can't concentrate.",
+            "Maria: I've been doing well. I can't complain."
+          ],
+          "answer": 2,
+          "explanation": "教科書 Unit 1-C (p.13) Expressions: 挨拶に対する決まり文句「Can't complain.」"
+        },
+        {
+          "id": 2,
+          "text": "What have you been up to lately?",
+          "choices": [
+            "I haven't been doing so well.",
+            "I've been managing.",
+            "I've been studying Spanish."
+          ],
+          "answer": 2,
+          "explanation": "教科書 Unit 1-B (p.10) Focus: 具体的に取り組んでいる行動を現在完了進行形で答える"
+        },
+        {
+          "id": 3,
+          "text": "Hey, Tony. Where have you been?",
+          "choices": [
+            "I've been studying abroad since three weeks.",
+            "I've been studying abroad for two hours.",
+            "I've been studying abroad for two years."
+          ],
+          "answer": 2,
+          "explanation": "期間には for を使用し、長期の所在を尋ねる文脈に合致するもの"
+        },
+        {
+          "id": 4,
+          "text": "Hey, Jill. What have you been up to lately?",
+          "choices": [
+            "I've been applying to colleges.",
+            "I've been considering to colleges.",
+            "I've been managing colleges."
+          ],
+          "answer": 0,
+          "explanation": "apply to colleges (大学に出願する) が適切なコロケーション"
+        },
+        {
+          "id": 5,
+          "text": "How are you doing today?",
+          "choices": [
+            "I've been complaining.",
+            "I've been hearing.",
+            "I've seen better days."
+          ],
+          "answer": 2,
+          "explanation": "教科書 Unit 1-C (p.13) Expressions: あまり調子が良くない時の返答「I've seen better days.」"
+        },
+        {
+          "id": 6,
+          "text": "We need to buy this book! I'm _________ it will make us rich.",
+          "choices": [
+            "convinced",
+            "convincing",
+            "convince"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-C (p.12) Ex.2-1: 人（I）が「確信している」感情・状態を表すため過去分詞形の convinced を使います。"
+        },
+        {
+          "id": 7,
+          "text": "I love popping bubble wrap. It's so _________!",
+          "choices": [
+            "satisfied",
+            "satisfying",
+            "satisfy"
+          ],
+          "answer": 1,
+          "explanation": "教科書 Unit 1-C (p.12) Ex.2-2: 物事（It）が満足感を与える性質を表すため現在分詞形の satisfying を使います。"
+        },
+        {
+          "id": 8,
+          "text": "I was excited to see the movie. But after watching it, I was a little _________.",
+          "choices": [
+            "disappointed",
+            "disappointing",
+            "disappoint"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-C (p.12) Ex.2-3: 人（I）が「がっかりした」感情を表すため過去分詞形の disappointed を使います。"
+        },
+        {
+          "id": 9,
+          "text": "That movie was so good! I was really _________ by the ending, too!",
+          "choices": [
+            "touched",
+            "touching",
+            "touch"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-C (p.12) Ex.2-4: 人（I）が結末に「感動した」ことを表すため touched を使います。"
+        },
+        {
+          "id": 10,
+          "text": "I had to give a presentation to the class. I was so _________ to talk in front of everyone.",
+          "choices": [
+            "frightened",
+            "frightening",
+            "frighten"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-C (p.12) Ex.2-5: 人（I）が「怖かった・怯えた」感情を表すため frightened を使います。"
+        },
+        {
+          "id": 11,
+          "text": "OK. This hike is really _________. Can we take a break?",
+          "choices": [
+            "tired",
+            "tiring",
+            "tire"
+          ],
+          "answer": 1,
+          "explanation": "教科書 Unit 1-C (p.12) Ex.2-6: ハイキング（This hike）が人を疲れさせる性質を表すため tiring を使います。"
+        },
+        {
+          "id": 12,
+          "text": "What do you mean you don't like kangaroos? I think they're _________ animals.",
+          "choices": [
+            "fascinated",
+            "fascinating",
+            "fascinate"
+          ],
+          "answer": 1,
+          "explanation": "教科書 Unit 1-C (p.12) Ex.2-7: 動物が「魅力的である」という性質を表すため fascinating を使います。"
+        },
+        {
+          "id": 13,
+          "text": "You don't have to eat the ice cream if it's so _________. Just throw it away.",
+          "choices": [
+            "disgusted",
+            "disgusting",
+            "disgust"
+          ],
+          "answer": 1,
+          "explanation": "教科書 Unit 1-C (p.12) Ex.2-8: アイスクリーム（it）が「気持ち悪い・まずい」性質を表すため disgusting を使います。"
+        },
+        {
+          "id": 14,
+          "text": "He _________ studying since 3:00 p.m.",
+          "choices": [
+            "has been",
+            "have been",
+            "is been"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-B (p.11) Grammar: 三人称単数（He）の現在完了進行形は has been + -ing です。"
+        },
+        {
+          "id": 15,
+          "text": "I've been living in South Korea _________ ten years.",
+          "choices": [
+            "for",
+            "since",
+            "during"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-B (p.11) Grammar: 期間（ten years）の前には for を用います。"
+        },
+        {
+          "id": 16,
+          "text": "Phil _________ his studies well recently.",
+          "choices": [
+            "has not been managing",
+            "not has been managing",
+            "has been not manage"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-B (p.11) Ex.6-3: 現在完了進行形の否定文は has/have not been + -ing の語順にします。"
+        },
+        {
+          "id": 17,
+          "text": "Marcus _________ a music festival lately.",
+          "choices": [
+            "has been organizing",
+            "have been organizing",
+            "has organizing"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-B (p.11) Ex.6-4: 現在完了進行形 has been organizing を使います。"
+        },
+        {
+          "id": 18,
+          "text": "I've been thinking that I need to _________ more on learning a second language.",
+          "choices": [
+            "concentrate",
+            "complain",
+            "interview"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-B (p.11) Ex.8-4: concentrate on ～（〜に集中する）が文脈に合致します。"
+        },
+        {
+          "id": 19,
+          "text": "Lauren and I have been attending a summer program, and I _________ of the time!",
+          "choices": [
+            "lost track",
+            "made a difference",
+            "applied"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-D (p.15) Reading: lose track of time（時間の感覚を忘れる）の表現です。"
+        },
+        {
+          "id": 20,
+          "text": "How's life?",
+          "choices": [
+            "Couldn't be better!",
+            "I've been applying.",
+            "Yes, I have."
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-C (p.13) Expressions: 「How's life?」に対するポジティブな返答「Couldn't be better!（最高だよ！）」"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "course_name": "International Communication I (2026-後期-火2-他)-40480",
+  "quiz_title": "UNIT 1 QUIZ - PART 2 = 10 POINTS",
+  "sub_title": "Unit 1 Quiz - Part 2",
+  "instructor": "練習問題",
+  "time_limit": "10 分",
+  "deadline": "2026-10-06 12:30",
+  "sections": [
+    {
+      "id": "sec1",
+      "type": "choice",
+      "title": "SECTION 1: SELECT THE CORRECT ANSWER. (5 POINTS)",
+      "questions": [
+        {
+          "id": 1,
+          "text": "Lily _________ with her friend Timmy after they fought.",
+          "choices": [
+            "made off",
+            "made up"
+          ],
+          "answer": 1,
+          "explanation": "make up = to become friends again after an argument (仲直りする)"
+        },
+        {
+          "id": 2,
+          "text": "I just came by to see how you were _________ with your new job.",
+          "choices": [
+            "making off",
+            "making out"
+          ],
+          "answer": 1,
+          "explanation": "make out = manage, get along (うまくやっていく・進捗する)"
+        },
+        {
+          "id": 3,
+          "text": "We need to _________ lost time.",
+          "choices": [
+            "make up for",
+            "make out"
+          ],
+          "answer": 0,
+          "explanation": "make up for = to compensate for something (埋め合わせる・取り戻す)"
+        },
+        {
+          "id": 4,
+          "text": "I'm not sure what to _________ this strange new building.",
+          "choices": [
+            "make of",
+            "make out"
+          ],
+          "answer": 0,
+          "explanation": "make of = to think (of something), as an opinion (〜をどう解釈するか・どう思うか)"
+        },
+        {
+          "id": 5,
+          "text": "I heard the thief _________ with all of the Queen's jewels.",
+          "choices": [
+            "made off",
+            "made up"
+          ],
+          "answer": 0,
+          "explanation": "make off (with) = to steal and leave quickly (持ち逃げする)"
+        },
+        {
+          "id": 6,
+          "text": "Do you ever _________ an excuse for being late?",
+          "choices": [
+            "make up",
+            "make off"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.1: make up = to invent a story / excuse (言い訳や作り話をでっちあげる)"
+        },
+        {
+          "id": 7,
+          "text": "Can you always _________ what your English teacher is saying?",
+          "choices": [
+            "make out",
+            "make of"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.2: make out = to understand / manage to hear or see (理解する・聞き取る)"
+        },
+        {
+          "id": 8,
+          "text": "Has anyone ever _________ your umbrella?",
+          "choices": [
+            "made off with",
+            "made up for"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.3: make off with = to steal (〜を盗む・持ち去る)"
+        },
+        {
+          "id": 9,
+          "text": "Did you ever do something bad to someone? What did you do to _________ it?",
+          "choices": [
+            "make up for",
+            "make out"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.4: make up for = to compensate for something (〜の埋め合わせをする)"
+        },
+        {
+          "id": 10,
+          "text": "What do you _________ Fraser's magic?",
+          "choices": [
+            "make of",
+            "make off"
+          ],
+          "answer": 0,
+          "explanation": "PDF Ex.5: make of = to think of something, as an opinion (〜についてどう思うか)"
+        },
+        {
+          "id": 11,
+          "text": "James _________ with the cookies. Catch him!",
+          "choices": [
+            "made off",
+            "made up"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-D (p.14) Ex.3-1: make off (with) = 持ち逃げする・急いで立ち去る"
+        },
+        {
+          "id": 12,
+          "text": "Why are you home late? Don't _________ stories.",
+          "choices": [
+            "make up",
+            "make out"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-D (p.14) Ex.3-2: make up = to invent something (作り話をする)"
+        },
+        {
+          "id": 13,
+          "text": "How do you plan to _________ your mistakes?",
+          "choices": [
+            "make up for",
+            "make of"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-D (p.14) Ex.3-3: make up for = to compensate for (ミスを償う・埋め合わせる)"
+        },
+        {
+          "id": 14,
+          "text": "I'm sorry, but I can't hear you well. I can hardly _________ what you're saying.",
+          "choices": [
+            "make out",
+            "make off"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-D (p.14) Ex.3-4: make out = to manage to see/hear, to understand (聞き取る・理解する)"
+        },
+        {
+          "id": 15,
+          "text": "What do you _________ Jim? I think he's funny.",
+          "choices": [
+            "make of",
+            "make up"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-D (p.14) Ex.3-5: make of = to think of (opinion) (〜をどう思うか)"
+        },
+        {
+          "id": 16,
+          "text": "Which phrasal verb means 'to invent a story or to become friends again after an argument'?",
+          "choices": [
+            "make up",
+            "make out"
+          ],
+          "answer": 0,
+          "explanation": "PDF Definition: make up = A) to invent a story, B) to become friends again after an argument"
+        },
+        {
+          "id": 17,
+          "text": "Which phrasal verb means 'to leave somewhere quickly'?",
+          "choices": [
+            "make off",
+            "make of"
+          ],
+          "answer": 0,
+          "explanation": "PDF Definition: make off = to leave somewhere quickly"
+        },
+        {
+          "id": 18,
+          "text": "Which phrasal verb means 'to manage to see something or to understand'?",
+          "choices": [
+            "make out",
+            "make up for"
+          ],
+          "answer": 0,
+          "explanation": "PDF Definition: make out = A) to manage to see (something), B) to understand"
+        },
+        {
+          "id": 19,
+          "text": "After drawing up a few storyboards, I could finally _________ what she had planned.",
+          "choices": [
+            "make out",
+            "make off"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-D (p.15) Reading: make out = 理解する・把握する"
+        },
+        {
+          "id": 20,
+          "text": "At first, I didn't know what to _________ her ideas.",
+          "choices": [
+            "make of",
+            "make up"
+          ],
+          "answer": 0,
+          "explanation": "教科書 Unit 1-D (p.15) Reading: know what to make of ~ = 〜をどう受け止めるべきか分かる"
+        }
+      ]
+    }
+  ]
+}
