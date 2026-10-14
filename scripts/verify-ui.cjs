@@ -12,7 +12,7 @@ for(const m of js.matchAll(/getElementById\('([^']+)'\)/g)) {
 }
 assert(css.includes('width: max-content;'));
 assert.equal((css.match(/\{/g)||[]).length,(css.match(/\}/g)||[]).length);
-const context = {appState:{vocxProgress:{},dojoProgress:{}},CHECK_BADGE_SVG:'check',PAUSE_BADGE_SVG:'pause',playSound:()=>{},saveState:()=>{},closeQuizScreen:()=>{},showQuizResults:()=>{}};
+const context = {debugProgress: null,appState:{vocxProgress:{},dojoProgress:{}},CHECK_BADGE_SVG:'check',PAUSE_BADGE_SVG:'pause',playSound:()=>{},saveState:()=>{},closeQuizScreen:()=>{},showQuizResults:()=>{}};
 vm.createContext(context);
 vm.runInContext(js.slice(js.indexOf('  function getPerfectClearCount'), js.indexOf('  function renderHomeUnits')),context);
 const finishStart = js.indexOf('  function finishQuizSession');
@@ -44,3 +44,23 @@ context.appState.vocxProgress['03'].clearedModes['eng-type'] = true;
 assert.equal(context.getUnitEvaluation('vocx', '03').badge, 'check');
 context.appState.vocxProgress['04'] = {clearedModes: {oni: true}, perfectClearCount: 0};
 assert.equal(context.getUnitEvaluation('vocx', '04').status, 'nice');
+
+const savedProgress = JSON.stringify(context.appState);
+context.debugProgress = {face: 'vocx', unitId: '05', entry: {perfectClearCount: 1, clearedModes: {}}};
+assert.equal(context.getUnitEvaluation('vocx', '05').status, 'perfect');
+context.debugProgress.entry.perfectClearCount = 2;
+assert.equal(context.getUnitEvaluation('vocx', '05').status, 'marvelous');
+assert.equal(context.getUnitEvaluation('vocx', '05').label, 'Marvelous! ×2');
+context.debugProgress.entry.perfectClearCount = 5;
+assert.equal(context.getUnitEvaluation('vocx', '05').label, 'Marvelous! ×5');
+assert.equal(JSON.stringify(context.appState), savedProgress, 'debug previews do not mutate saved progress');
+context.debugProgress = null;
+assert.equal(context.getUnitEvaluation('vocx', '05').status, 'untried');
+const counterElements = {};
+context.document = {getElementById: id => counterElements[id] ||= {style: {}, clientWidth: 200}};
+vm.runInContext(js.slice(js.indexOf('  function updateProgressBar'), js.indexOf('  function syncViewportHeight')), context);
+context.currentSession = {unitId: '02', questions: Array(20), currentIndex: 0};
+context.updateProgressBar(); assert.equal(counterElements['quiz-question-count'].textContent, '1 / 20 問目');
+context.currentSession.currentIndex = 19;
+context.updateProgressBar(); assert.equal(counterElements['quiz-question-count'].textContent, '20 / 20 問目');
+new vm.Script(fs.readFileSync('./debug.js', 'utf8'));

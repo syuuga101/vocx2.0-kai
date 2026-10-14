@@ -97,6 +97,10 @@
 
     <!-- ==================== QUIZ SCREEN LAYER ==================== -->
     <div id="screen-quiz" class="screen">
+      <div id="quiz-countdown" class="quiz-countdown" role="status" aria-live="polite" aria-atomic="true" hidden>
+        <span class="quiz-countdown-label">まもなくスタート</span>
+        <span id="quiz-countdown-number" class="quiz-countdown-number">3</span>
+      </div>
       <!-- Topbar: Close X, Progress Slider, Unit Number -->
       <div class="quiz-topbar">
         <button id="quiz-close-btn" class="quiz-close-btn" type="button" aria-label="Quit Quiz">
@@ -106,6 +110,7 @@
         </button>
 
         <div id="quiz-progress-track" class="quiz-progress-track">
+          <span id="quiz-question-count" class="quiz-question-count">1 / 20 問目</span>
           <div id="quiz-progress-fill" class="quiz-progress-fill"></div>
           <div id="quiz-progress-thumb" class="quiz-progress-thumb"></div>
         </div>
@@ -189,5 +194,7 @@
   <!-- Pre-bundled CSV & JSON fallback data for static file:// execution -->
   <script src="./data.js"></script>
   <script src="./app.js"></script>
+  <!-- Development only: remove this script and its precache entry before release. -->
+  <script src="./debug.js"></script>
 </body>
 </html>

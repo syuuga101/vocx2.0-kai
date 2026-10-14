@@ -1,10 +1,11 @@
-const CACHE_NAME = 'vocx-dojo-pwa-v29';
+const CACHE_NAME = 'vocx-dojo-pwa-v37';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './ui.css',
   './app.js',
+  './debug.js',
   './sys/flag-jp.svg',
   './sys/flag-gb.svg',
   './sys/mode-jp-en.png',
@@ -19,6 +20,8 @@ const PRECACHE_ASSETS = [
   './se/Slide.wav',
   './se/correct.wav',
   './se/incorrect.wav',
+  './se/countdown.wav',
+  './se/countdown-start.wav',
   './dojo/unit1/part1.json',
   './dojo/unit1/part2.json',
   './dojo/Unit2/part1.json',

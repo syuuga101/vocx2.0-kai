@@ -25,9 +25,12 @@
   let vocxUnitsData = Object.assign({}, window.VOCX_FALLBACK_DATA || {});
   let dojoUnitsData = Object.assign({}, window.DOJO_FALLBACK_DATA || {});
   let currentSession = null;
+  let debugProgress = null;
+  let debugSandbox = null;
   let cancelChoicePress = null;
   let studyClock = null;
   let studyTick = 0;
+  let countdownTick = 0;
 
   function formatStudyTime(ms) {
     const seconds = Math.floor(ms / 1000);
@@ -98,6 +101,7 @@
   }
 
   function saveState() {
+    if (debugSandbox) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
     } catch (e) {
@@ -113,7 +117,9 @@
     slide: './se/Slide.wav',
     correct: './se/correct.wav',
     wrong: './se/incorrect.wav',
-    complete: './se/correct.wav'
+    complete: './se/correct.wav',
+    countdown: './se/countdown.wav',
+    countdownStart: './se/countdown-start.wav'
   };
 
   const preloadedAudio = {};
@@ -287,9 +293,13 @@
     return entry?.perfectClearCount ?? (entry?.bestScorePct === 100 ? 1 : 0);
   }
 
+  function getProgressEntry(face, unitId) {
+    if (debugProgress?.face === face && debugProgress.unitId === unitId) return debugProgress.entry;
+    return (face === 'vocx' ? appState.vocxProgress : appState.dojoProgress)[unitId];
+  }
+
   function getUnitEvaluation(face, unitId) {
-    const progMap = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
-    const entry = progMap[unitId];
+    const entry = getProgressEntry(face, unitId);
     if (!entry) {
       return { status: 'untried', label: 'Untried', badge: '' };
     }
@@ -303,7 +313,7 @@
     const perfectCount = getPerfectClearCount(entry);
 
     if (perfectCount >= 2) {
-      return { status: 'marvelous', label: 'Marvelous!', badge: CHECK_BADGE_SVG };
+      return { status: 'marvelous', label: `Marvelous! ×${perfectCount}`, badge: CHECK_BADGE_SVG };
     }
     if (perfectCount >= 1) {
       return {
@@ -330,8 +340,7 @@
 
     const rowsHtml = unitIds.map(unitId => {
       const evalInfo = getUnitEvaluation(appState.face, unitId);
-      const progress = appState.face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
-      const perfectLevel = Math.min(2, getPerfectClearCount(progress[unitId]));
+      const perfectLevel = Math.min(2, getPerfectClearCount(getProgressEntry(appState.face, unitId)));
       return `
         <div class="unit-row" role="button" tabindex="0" aria-label="Unit ${unitId}、${evalInfo.label}、モードを選択" data-unit="${unitId}" data-status="${evalInfo.status}" data-perfect-level="${perfectLevel}">
           <div class="unit-circle-wrap" data-role="circle" data-unit="${unitId}">
@@ -688,7 +697,7 @@
     const typedText = currentSession.answeredCurrent ? '' : currentSession.typedText;
     currentSession.answeredCurrent = false;
     showToast('Resumed');
-    openQuizScreen();
+    openQuizScreen(false);
     currentSession.selectedChoice = selectedChoice;
     currentSession.typedText = typedText || '';
     const input = document.getElementById('type-native-input');
@@ -701,21 +710,62 @@
   /* =========================================================================
    * 7. QUIZ SCREEN RENDERING & INTERACTION
    * ========================================================================= */
-  function openQuizScreen() {
+  function cancelQuizCountdown() {
+    clearTimeout(countdownTick);
+    document.getElementById('quiz-countdown').hidden = true;
+    document.getElementById('screen-quiz').classList.remove('quiz-preparing');
+  }
+
+  function openQuizScreen(withCountdown = true) {
+    if (debugSandbox?.skipCountdown) withCountdown = false;
+    cancelQuizCountdown();
+    stopStudyClock();
     document.getElementById('screen-main').classList.remove('active');
     document.getElementById('screen-quiz').classList.add('active');
     const sheet = document.getElementById('quiz-sheet');
     sheet.style.transform = 'translateY(0px)';
     closeCheckSheet();
-    renderCurrentQuestion();
-    if (!appState.pauseHintSeen) {
-      showToast('上のバーを下にスワイプすると一時停止');
-      appState.pauseHintSeen = true;
-      saveState();
+    const session = currentSession;
+    const begin = () => {
+      if (currentSession !== session) return;
+      cancelQuizCountdown();
+      renderCurrentQuestion();
+      if (!appState.pauseHintSeen) {
+        showToast('上のバーを下にスワイプすると一時停止');
+        appState.pauseHintSeen = true;
+        saveState();
+      }
+    };
+    if (!withCountdown) {
+      begin();
+      return;
     }
+    document.getElementById('quiz-content').replaceChildren();
+    document.getElementById('quiz-study-time').textContent = '00:00';
+    document.getElementById('screen-quiz').classList.add('quiz-preparing');
+    const countdown = document.getElementById('quiz-countdown');
+    const number = document.getElementById('quiz-countdown-number');
+    countdown.hidden = false;
+    let remaining = 3;
+    number.textContent = String(remaining);
+    const tick = () => {
+      if (currentSession !== session) return;
+      remaining--;
+      if (remaining === 0) {
+        playSound('countdownStart');
+        begin();
+      } else {
+        number.textContent = String(remaining);
+        playSound('countdown');
+        countdownTick = setTimeout(tick, 1000);
+      }
+    };
+    playSound('countdown');
+    countdownTick = setTimeout(tick, 1000);
   }
 
   function closeQuizScreen() {
+    cancelQuizCountdown();
     stopStudyClock();
     closeCheckSheet();
     document.getElementById('screen-quiz').classList.remove('active');
@@ -737,6 +787,7 @@
     document.getElementById('quiz-progress-fill').style.width = `${fillWidth}px`;
     document.getElementById('quiz-progress-thumb').style.left = `${thumbLeft}px`;
     document.getElementById('quiz-unit-num').textContent = currentSession.unitId;
+    document.getElementById('quiz-question-count').textContent = `${Math.min(currentSession.currentIndex + 1, total)} / ${total} 問目`;
   }
 
   /* Sync --app-height to eliminate iOS standalone black-translucent bottom gap */
@@ -774,7 +825,7 @@
     if (e.touches && e.touches.length > 1) {
       return;
     }
-    const scrollEl = e.target.closest('.units-scroll, .quiz-content, .unit-mode-dialog, .check-sheet, .results-screen');
+    const scrollEl = e.target.closest('.units-scroll, .quiz-content, .unit-mode-dialog, .check-sheet, .results-screen, .debug-panel');
     if (!scrollEl) {
       // Touched navigation bar (.bottom-footer), header (.app-header), Mypage, modals, etc. -> block page scroll
       if (e.cancelable) e.preventDefault();
@@ -1172,6 +1223,7 @@
   function pauseQuizSession() {
     if (!currentSession || currentSession.finished) return;
     cancelChoicePress?.();
+    cancelQuizCountdown();
     stopStudyClock();
     const input = document.getElementById('type-native-input');
     if (input) { currentSession.typedText = input.value; input.blur(); }
@@ -1202,6 +1254,7 @@
    * 9. KEYBOARD SHORTCUTS (Check Sheet / Profile Name Modal)
    * ========================================================================= */
   window.addEventListener('keydown', e => {
+    if (document.querySelector('.debug-panel[open]')) return;
     if (document.getElementById('name-modal').classList.contains('open')) {
       if (e.key === 'Enter') saveProfileName();
       return;
@@ -1387,7 +1440,128 @@
 
   document.getElementById('check-next-btn').addEventListener('click', advanceToNextQuestion);
 
+  function createDebugTools() {
+    const home = () => {
+      cancelChoicePress?.();
+      document.getElementById('screen-results').classList.remove('active');
+      quitModal.classList.remove('open');
+      nameModal.classList.remove('open');
+      if (modeDialog.open) modeDialog.close();
+      closeQuizScreen();
+      updateResultsScrollHint();
+    };
+    const requireSession = () => {
+      if (!currentSession || currentSession.finished) throw new Error('先にテスト用クイズを開始してください');
+      return currentSession;
+    };
+    const entryFor = (face, unitId, count, cleared) => ({
+      perfectClearCount: Math.max(0, Math.floor(Number(count) || 0)),
+      bestScorePct: count > 0 ? 100 : cleared ? 80 : 0,
+      clearedModes: cleared ? Object.fromEntries(MODE_OPTIONS[face].map(mode => [mode.id, true])) : {},
+      pausedSession: null
+    });
+    return {
+      inspect() {
+        const q = currentSession?.questions[currentSession.currentIndex];
+        return {state: structuredClone(appState), session: currentSession ? {
+          face: currentSession.face, unitId: currentSession.unitId, mode: currentSession.mode,
+          question: currentSession.currentIndex + 1, total: currentSession.questions.length,
+          correct: currentSession.correctCount, questionTimeMs: currentSession.questionTimeMs || 0,
+          totalTimeMs: currentSession.totalTimeMs || 0, finished: !!currentSession.finished,
+          answer: q?.acceptedAnswers?.join(' / ') || q?.choices?.[q.answerIndex] || ''
+        } : null};
+      },
+      units(face) { return Object.keys(face === 'vocx' ? vocxUnitsData : dojoUnitsData).sort((a, b) => Number(a) - Number(b)); },
+      modes(face, unitId) { return MODE_OPTIONS[face].filter(mode => face === 'vocx' || dojoUnitsData[unitId]?.[mode.id]).map(mode => ({id: mode.id, label: mode.accessibleLabel})); },
+      progress({face, unitId, count, cleared, all}) {
+        debugProgress = null;
+        const map = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+        for (const id of all ? this.units(face) : [unitId]) map[id] = entryFor(face, id, count, cleared);
+        home(); switchFace(face);
+      },
+      start({face, unitId, mode, questions, skipCountdown}) {
+        home(); switchFace(face);
+        debugSandbox.skipCountdown = skipCountdown;
+        if (face === 'vocx') startVocxQuiz(unitId, mode); else startDojoQuiz(unitId, mode);
+        const session = requireSession();
+        const limit = Math.max(1, Math.min(session.questions.length, Math.floor(Number(questions) || session.questions.length)));
+        session.questions = session.questions.slice(0, limit);
+        if (skipCountdown) renderCurrentQuestion();
+      },
+      answer(correct) {
+        const session = requireSession();
+        if (session.answeredCurrent) throw new Error('回答済みです。「次の問題」へ進んでください');
+        if (!document.getElementById('quiz-countdown').hidden) { cancelQuizCountdown(); renderCurrentQuestion(); }
+        const q = session.questions[session.currentIndex];
+        if (q.kind === 'vocx-eng-type') {
+          document.getElementById('type-native-input').value = correct ? q.acceptedAnswers[0] : '__debug_wrong__';
+          submitTypeAnswer();
+        } else {
+          session.selectedChoice = correct ? q.answerIndex : (q.answerIndex + 1) % q.choices.length;
+          confirmChoiceAnswer();
+        }
+      },
+      next() { const session = requireSession(); if (!session.answeredCurrent) throw new Error('先に正解または不正解を確定してください'); advanceToNextQuestion(); },
+      jump(number) {
+        const session = requireSession(); stopStudyClock(); cancelQuizCountdown();
+        session.currentIndex = Math.max(0, Math.min(session.questions.length - 1, Math.floor(Number(number) || 1) - 1));
+        session.correctCount = 0; session.mistakes = []; session.totalTimeMs = 0;
+        session.questionTimeMs = 0; session.secondLetterHint = false;
+        renderCurrentQuestion();
+      },
+      time(seconds) {
+        const session = requireSession();
+        session.questionTimeMs = Math.max(0, Number(seconds) || 0) * 1000;
+        if (studyClock) studyClock.startedAt = performance.now();
+        document.getElementById('quiz-study-time').textContent = formatStudyTime(session.questionTimeMs);
+      },
+      results(ratio, seconds) {
+        const session = requireSession(); stopStudyClock(); cancelQuizCountdown();
+        session.correctCount = Math.round(session.questions.length * Math.max(0, Math.min(1, ratio)));
+        session.mistakes = session.questions.slice(session.correctCount).map(q => ({word: q.wordDisplay, meaning: q.subDisplay}));
+        session.totalTimeMs = Math.max(0, Number(seconds) || 0) * 1000;
+        session.answeredCurrent = true;
+        finishQuizSession();
+      },
+      pause() { requireSession(); pauseQuizSession(); },
+      resume(face, unitId) {
+        const saved = (face === 'vocx' ? appState.vocxProgress : appState.dojoProgress)[unitId]?.pausedSession;
+        if (!saved) throw new Error('このユニットに途中保存はありません');
+        home(); switchFace(face); resumePausedSession(saved);
+      },
+      prompt(text) {
+        requireSession(); stopStudyClock(); cancelQuizCountdown();
+        currentSession = structuredClone(currentSession);
+        const q = currentSession.questions[currentSession.currentIndex];
+        if (q.kind === 'vocx-eng-type') q.rawItem.sentence = text; else q.prompt = text;
+        renderCurrentQuestion();
+      },
+      settings({hint, sound, name}) {
+        appState.settings.initialHint = hint; appState.settings.soundEffects = sound;
+        if (name.trim()) appState.profileName = name.trim().slice(0, 20);
+        syncSettingsUI();
+      },
+      sound(type) { playSound(type); },
+      view(tab) { home(); switchTab(tab); },
+      home,
+      reset(empty = false) {
+        home(); debugProgress = null;
+        appState = structuredClone(empty ? defaultState : debugSandbox.original);
+        switchTab(appState.activeTab || 'home', false); syncSettingsUI(); renderHomeUnits();
+      }
+    };
+  }
+
   /* Initialize */
+  window.addEventListener('vocx-debug-connect', event => {
+    if (location.hash !== '#debug' && new URLSearchParams(location.search).get('debug') !== '1') return;
+    if (!debugSandbox) debugSandbox = { original: structuredClone(appState), skipCountdown: true };
+    event.detail.connect(createDebugTools());
+  });
+  window.addEventListener('vocx-debug-preview', event => {
+    debugProgress = event.detail;
+    renderHomeUnits();
+  });
   syncViewportHeight();
   syncSettingsUI();
   switchTab(appState.activeTab || 'home', false);

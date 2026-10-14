@@ -28,7 +28,7 @@ reset(); handlers.click({detail: 0}); assert.equal(submissions, 2, 'keyboard cli
 const els = {};
 const el = id => els[id] ||= {dataset: {}, textContent: '', innerHTML: '', scrollTop: 100, value: '', focus() {}, blur() {}, classList: {active: false, add() {this.active = true}, remove() {this.active = false}, contains() {return this.active}}};
 let saves = 0, stopped = 0;
-const r = {currentSession: {face: 'vocx', unitId: '02', mode: 'oni', correctCount: 1, questions: [1, 2], questionTimeMs: 3000, totalTimeMs: 4000, mistakes: [{word: '<word>', meaning: '意味'}]}, appState: {vocxProgress: {}, dojoProgress: {}}, document: {getElementById: el}, structuredClone, stopStudyClock: () => stopped++, closeCheckSheet() {}, saveState: () => saves++, playSound() {}, formatStudyTime: ms => String(ms), CHECK_BADGE_SVG: 'check', PAUSE_BADGE_SVG: 'pause', cancelChoicePress: null, closeQuizScreen() {} };
+const r = {debugProgress: null,currentSession: {face: 'vocx', unitId: '02', mode: 'oni', correctCount: 1, questions: [1, 2], questionTimeMs: 3000, totalTimeMs: 4000, mistakes: [{word: '<word>', meaning: '意味'}]}, appState: {vocxProgress: {}, dojoProgress: {}}, document: {getElementById: el}, structuredClone, stopStudyClock: () => stopped++, closeCheckSheet() {}, saveState: () => saves++, playSound() {}, formatStudyTime: ms => String(ms), CHECK_BADGE_SVG: 'check', PAUSE_BADGE_SVG: 'pause', cancelChoicePress: null, closeQuizScreen() {} };
 vm.createContext(r);
 vm.runInContext(extract('escapeHtml', 'confirmChoiceAnswer'), r);
 vm.runInContext(js.slice(js.indexOf('  function getPerfectClearCount'), js.indexOf('  function renderHomeUnits')), r);
@@ -54,6 +54,7 @@ r.submitTypeAnswer(); assert.equal(r.currentSession.totalTimeMs, 3500, 'typed an
 assert.equal(r.currentSession.mistakes[0].meaning, '起こる');
 r.submitTypeAnswer(); assert.equal(r.currentSession.totalTimeMs, 3500, 'typed answer cannot count time twice');
 vm.runInContext(extract('pauseQuizSession', 'endSheetDrag'), r);
+r.cancelQuizCountdown = () => {};
 r.currentSession = {face: 'dojo', unitId: '01', mode: 'part1', questions: [1], currentIndex: 0, questionTimeMs: 1234};
 r.pauseQuizSession(); const paused = r.appState.dojoProgress['01'].pausedSession;
 assert.equal(paused.questionTimeMs, 1234); assert.notEqual(paused, r.currentSession);

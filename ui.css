@@ -9,9 +9,12 @@
   --green-fill: #79cfa5;
   --green-ring: #a7e6c3;
   --green-shadow: #59aa84;
-  --yellow-fill: #ffd36a;
-  --yellow-ring: #ffe49a;
-  --yellow-shadow: #d9ab4e;
+  --unit-green-fill: #58e3a1;
+  --unit-green-ring: #b4f5d2;
+  --unit-green-shadow: #239c66;
+  --yellow-fill: #ffe24a;
+  --yellow-ring: #fff3a3;
+  --yellow-shadow: #ba8d1b;
   --progress-fill: #f08db5;
   --progress-thumb: #f8bfd7;
   --text-light: #e8f1f5;
@@ -295,11 +298,11 @@ button, input, select, textarea { font-family: 'Sawarabi Gothic', sans-serif; }
 
 /* Status themes for Unit Circle */
 .unit-row[data-perfect-level="1"] .unit-circle-shadow {
-  background-color: var(--green-shadow);
+  background-color: var(--unit-green-shadow);
 }
 .unit-row[data-perfect-level="1"] .unit-circle-main {
-  border-color: var(--green-ring);
-  background-color: var(--green-fill);
+  border-color: var(--unit-green-ring);
+  background-color: var(--unit-green-fill);
 }
 
 .unit-row[data-perfect-level="2"] .unit-circle-shadow {
@@ -1283,3 +1286,10 @@ button:focus-visible, input:focus-visible {
 .type-input-box { min-height: 56px; }
 .quiz-quit-actions { flex-direction: column; gap: 12px; }
 .quiz-quit-actions .quit-modal-btn { width: 100%; max-width: none; min-height: 44px; flex: none; font-size: 15px; }
+
+.quiz-countdown { position: absolute; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-page); color: var(--text-light); }
+.quiz-countdown[hidden] { display: none; }
+.quiz-question-count { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); font-size: 14px; line-height: 18px; text-align: center; color: var(--text-light); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.quiz-countdown-label { font-size: 18px; font-weight: 700; }
+.quiz-countdown-number { font-size: 96px; line-height: 1.2; font-weight: 900; color: var(--pink-accent); font-variant-numeric: tabular-nums; }
+.quiz-preparing .quiz-topbar, .quiz-preparing .quiz-sheet { visibility: hidden; }

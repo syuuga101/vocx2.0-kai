@@ -1,0 +1,15 @@
+const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('assert');
+const { buildPages } = require('./build-pages.cjs');
+const output = buildPages();
+const read = file => fs.readFileSync(path.join(output, file), 'utf8');
+const html = read('index.html'), js = read('app.js'), sw = read('sw.js');
+assert(!fs.existsSync(path.join(output, 'debug.js')));
+assert(!html.includes('debug.js')); assert(!sw.includes('debug.js'));
+assert(!/debugSandbox|debugProgress|createDebugTools|vocx-debug/.test(js));
+new vm.Script(js); new vm.Script(sw);
+for (const match of html.matchAll(/(?:src|href)="(\.\/[^"?]+)"/g)) assert(fs.existsSync(path.join(output, match[1])), match[1]);
+const handlers = {};
+vm.runInNewContext(sw, {self: {addEventListener: (name, fn) => handlers[name] = fn, skipWaiting() {}}, caches: {open: async () => ({addAll: async assets => {for (const asset of assets) assert(fs.existsSync(path.join(output, asset)), asset);}})}});
+let installed;
+handlers.install({waitUntil: promise => installed = promise});
+installed.then(() => console.log('OK: Pages release excludes debug, compiles, and contains every HTML/PWA asset')).catch(error => {console.error(error); process.exitCode = 1;});
