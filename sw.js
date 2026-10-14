@@ -1,13 +1,14 @@
-const CACHE_NAME = 'vocx-dojo-pwa-v3';
+const CACHE_NAME = 'vocx-dojo-pwa-v14';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
+  './ui.css',
+  './app.js',
+  './sys/flag-jp.svg',
+  './sys/flag-gb.svg',
   './manifest.json',
   './data.js',
-  './sys/ABCGintoDiscordNord-Bold.otf',
-  './sys/MPLUS1-Bold.ttf',
-  './sys/MPLUS1-Black.ttf',
   './sys/icon.svg',
   './sys/icon-192.png',
   './sys/icon-512.png',

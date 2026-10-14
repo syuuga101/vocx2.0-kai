@@ -1,0 +1,1339 @@
+(() => {
+  'use strict';
+
+  /* =========================================================================
+   * 1. STATE & STORAGE MANAGEMENT
+   * ========================================================================= */
+  const STORAGE_KEY = 'vocx_dojo_app_state_v2';
+  const LEGACY_STORAGE_KEY = 'vocx_dojo_app_state_v1';
+
+  const defaultState = {
+    face: 'vocx',          // 'vocx' | 'dojo'
+    activeTab: 'home',     // 'home' | 'mypage'
+    profileName: '@Name',
+    settings: {
+      initialHint: true,
+      skipSlide: false,    // Must default to false so Slide to Next is required before revealing the answer
+      soundEffects: true   // Enabled by default for ./se/ audio files
+    },
+    // Unit progress per face:
+    // vocxProgress[unitId] = { clearedModes: { 'jpn-eng': bool, 'eng-select': bool, 'eng-type': bool }, bestScorePct: number, perfectClearCount: number, pausedSession: null | {...} }
+    vocxProgress: {},
+    dojoProgress: {}
+  };
+
+  let appState = loadState();
+  let vocxUnitsData = Object.assign({}, window.VOCX_FALLBACK_DATA || {});
+  let dojoUnitsData = Object.assign({}, window.DOJO_FALLBACK_DATA || {});
+  let currentSession = null;
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(defaultState),
+          ...parsed,
+          settings: { ...defaultState.settings, ...(parsed.settings || {}) },
+          vocxProgress: parsed.vocxProgress || {},
+          dojoProgress: parsed.dojoProgress || {}
+        };
+      }
+      // Migrate progress from v1 if present, while resetting skipSlide=false & soundEffects=true
+      const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacyRaw) {
+        const legacy = JSON.parse(legacyRaw);
+        const migrated = {
+          ...structuredClone(defaultState),
+          face: legacy.face || 'vocx',
+          activeTab: legacy.activeTab || 'home',
+          profileName: legacy.profileName || '@Name',
+          settings: {
+            initialHint: legacy.settings && typeof legacy.settings.initialHint === 'boolean'
+              ? legacy.settings.initialHint
+              : true,
+            skipSlide: false,
+            soundEffects: true
+          },
+          vocxProgress: legacy.vocxProgress || {},
+          dojoProgress: legacy.dojoProgress || {}
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+      return structuredClone(defaultState);
+    } catch (e) {
+      return structuredClone(defaultState);
+    }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    } catch (e) {
+      // Ignore quota errors
+    }
+  }
+
+  /* =========================================================================
+   * 2. SOUND EFFECTS FROM ./se/ FOLDER
+   * ========================================================================= */
+  const SE_FILES = {
+    tap: './se/button.wav',
+    slide: './se/Slide.wav',
+    correct: './se/correct.wav',
+    wrong: './se/incorrect.wav',
+    complete: './se/correct.wav'
+  };
+
+  const preloadedAudio = {};
+  Object.entries(SE_FILES).forEach(([key, src]) => {
+    try {
+      const a = new Audio(src);
+      a.preload = 'auto';
+      preloadedAudio[key] = a;
+    } catch (e) {
+      // Ignore preload errors
+    }
+  });
+
+  function playSound(type) {
+    if (!appState.settings.soundEffects) return;
+    try {
+      const src = SE_FILES[type] || SE_FILES.tap;
+      const baseAudio = preloadedAudio[type];
+      if (baseAudio) {
+        const sound = baseAudio.cloneNode();
+        sound.volume = 0.85;
+        sound.play().catch(() => {});
+      } else {
+        const sound = new Audio(src);
+        sound.volume = 0.85;
+        sound.play().catch(() => {});
+      }
+    } catch (e) {
+      // Ignore audio errors
+    }
+  }
+
+  /* =========================================================================
+   * 3. CSV & JSON DYNAMIC LOADER (with fallback to data.js)
+   * ========================================================================= */
+  function parseCSVText(text) {
+    const rows = [];
+    let cur = '';
+    let inQuotes = false;
+    let row = [];
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      const next = text[i + 1];
+      if (ch === '"') {
+        if (inQuotes && next === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === ',' && !inQuotes) {
+        row.push(cur);
+        cur = '';
+      } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+        if (ch === '\r' && next === '\n') i++;
+        row.push(cur);
+        cur = '';
+        if (row.length >= 4 && row[0].trim()) {
+          rows.push({
+            word: row[0].trim(),
+            jpn: row[1].trim(),
+            def: row[2].trim(),
+            sentence: row[3].trim(),
+            inflected: row[4] ? row[4].trim() : ''
+          });
+        }
+        row = [];
+      } else {
+        cur += ch;
+      }
+    }
+    if (cur || row.length > 0) {
+      row.push(cur);
+      if (row.length >= 4 && row[0].trim()) {
+        rows.push({
+          word: row[0].trim(),
+          jpn: row[1].trim(),
+          def: row[2].trim(),
+          sentence: row[3].trim(),
+          inflected: row[4] ? row[4].trim() : ''
+        });
+      }
+    }
+    return rows;
+  }
+
+  async function tryFetchLiveFiles() {
+    if (window.location.protocol === 'file:') return;
+    const unitPromises = [];
+    for (let i = 1; i <= 27; i++) {
+      const id = String(i).padStart(2, '0');
+      unitPromises.push(
+        fetch(`./vocx/${id}.csv`)
+          .then(r => (r.ok ? r.text() : null))
+          .then(txt => {
+            if (txt) {
+              const parsed = parseCSVText(txt);
+              if (parsed.length > 0) vocxUnitsData[id] = parsed;
+            }
+          })
+          .catch(() => {})
+      );
+    }
+    const dojoPaths = [
+      { unit: '01', part: 'part1', url: './dojo/unit1/part1.json' },
+      { unit: '01', part: 'part2', url: './dojo/unit1/part2.json' },
+      { unit: '02', part: 'part1', url: './dojo/Unit2/part1.json' },
+      { unit: '02', part: 'part2', url: './dojo/Unit2/part2.json' }
+    ];
+    dojoPaths.forEach(({ unit, part, url }) => {
+      unitPromises.push(
+        fetch(url)
+          .then(r => (r.ok ? r.json() : null))
+          .then(json => {
+            if (json) {
+              if (!dojoUnitsData[unit]) dojoUnitsData[unit] = {};
+              dojoUnitsData[unit][part] = json;
+            }
+          })
+          .catch(() => {})
+      );
+    });
+    await Promise.all(unitPromises);
+    renderHomeUnits();
+  }
+
+  /* =========================================================================
+   * 4. UI HELPERS & BADGE SVGS
+   * ========================================================================= */
+  const CHECK_BADGE_SVG = `
+    <svg class="unit-badge" width="26" height="26" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16.5" cy="16.5" r="15" fill="var(--green-ring)" stroke="#2C2C2C" stroke-width="3"/>
+      <path d="M23 13L14.75 21.25L11 17.5" stroke="#2C2C2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+
+  const PAUSE_BADGE_SVG = `
+    <svg class="unit-badge" width="26" height="26" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16.5" cy="16.5" r="15" fill="var(--pink-accent)" stroke="#2C2C2C" stroke-width="3"/>
+      <path d="M14 22V11M18.7143 22V11" stroke="#2C2C2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+
+  let toastTimer = null;
+  function showToast(msg) {
+    const el = document.getElementById('mode-toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 1400);
+  }
+
+  function capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  function shuffleArray(arr) {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  /* =========================================================================
+   * 5. HOME SCREEN & UNIT STATUS COMPUTATION
+   * ========================================================================= */
+  function getPerfectClearCount(entry) {
+    // Older saves recorded only the best score, so preserve one known perfect clear.
+    return entry?.perfectClearCount ?? (entry?.bestScorePct === 100 ? 1 : 0);
+  }
+
+  function getUnitEvaluation(face, unitId) {
+    const progMap = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+    const entry = progMap[unitId];
+    if (!entry) {
+      return { status: 'untried', label: 'Untried', badge: '' };
+    }
+    if (entry.pausedSession) {
+      return { status: 'paused', label: '続きから', badge: PAUSE_BADGE_SVG };
+    }
+    const cleared = entry.clearedModes || {};
+    const clearedCount = Object.values(cleared).filter(Boolean).length;
+    const requiredModes = face === 'vocx' ? 3 : 2;
+    const perfectCount = getPerfectClearCount(entry);
+
+    if (perfectCount >= 2) {
+      return { status: 'marvelous', label: 'Marvelous!', badge: CHECK_BADGE_SVG };
+    }
+    if (perfectCount >= 1) {
+      return {
+        status: 'perfect',
+        label: 'Perfect!',
+        badge: clearedCount >= requiredModes ? CHECK_BADGE_SVG : ''
+      };
+    }
+    if (clearedCount > 0) {
+      return { status: 'nice', label: 'Nice!', badge: '' };
+    }
+    return { status: 'untried', label: 'Untried', badge: '' };
+  }
+
+  function renderHomeUnits() {
+    document.documentElement.dataset.face = appState.face;
+    const listEl = document.getElementById('units-list');
+    document.getElementById('face-vocx-btn').setAttribute('aria-pressed', String(appState.face === 'vocx'));
+    document.getElementById('face-dojo-btn').setAttribute('aria-pressed', String(appState.face === 'dojo'));
+
+    const unitIds = appState.face === 'vocx'
+      ? Object.keys(vocxUnitsData).sort((a, b) => Number(a) - Number(b))
+      : Object.keys(dojoUnitsData).sort((a, b) => Number(a) - Number(b));
+
+    const rowsHtml = unitIds.map(unitId => {
+      const evalInfo = getUnitEvaluation(appState.face, unitId);
+      const progress = appState.face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+      const perfectLevel = Math.min(2, getPerfectClearCount(progress[unitId]));
+      return `
+        <div class="unit-row" role="button" tabindex="0" aria-label="Unit ${unitId}、${evalInfo.label}、モードを選択" data-unit="${unitId}" data-status="${evalInfo.status}" data-perfect-level="${perfectLevel}">
+          <div class="unit-circle-wrap" data-role="circle" data-unit="${unitId}">
+            <div class="unit-circle-shadow"></div>
+            <div class="unit-circle-main">
+              <span class="unit-circle-num">${unitId}</span>
+            </div>
+            ${evalInfo.badge}
+          </div>
+          <div class="unit-info-wrap" data-role="unit-text" data-unit="${unitId}">
+            <div class="unit-title-text">Unit ${unitId}</div>
+            <div class="unit-status-text">${evalInfo.label}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.innerHTML = `<div class="timeline-line"></div>${rowsHtml}`;
+
+    scheduleUnitScrollHints();
+  }
+
+  const JP_FLAG = '<img class="mode-flag" src="./sys/flag-jp.svg" alt="日本語" />';
+  const EN_FLAG = '<img class="mode-flag" src="./sys/flag-gb.svg" alt="英語" />';
+  const MODE_OPTIONS = {
+    vocx: [
+      { id: 'jpn-eng', label: JP_FLAG + ' → ' + EN_FLAG, icon: 'あ → A', accessibleLabel: '日本語から英単語を選ぶ' },
+      { id: 'eng-select', label: EN_FLAG + ' → ' + EN_FLAG, icon: 'A → A', accessibleLabel: '英語の説明から英単語を選ぶ' },
+      { id: 'eng-type', label: '英単語を入力', hint: '英文の空欄を埋める', icon: '<i class="fa-regular fa-keyboard"></i>', accessibleLabel: '英文の空欄に英単語を入力する' }
+    ],
+    dojo: [
+      { id: 'part1', label: 'Part 1', icon: '01', accessibleLabel: '単語の組み合わせと選択問題' },
+      { id: 'part2', label: 'Part 2', icon: '02', accessibleLabel: '会話とフレーズの問題' }
+    ]
+  };
+  const modeDialog = document.getElementById('unit-mode-dialog');
+  const modeOptions = document.getElementById('unit-mode-options');
+  let selectedUnit = null;
+
+  function openUnitModes(unitId) {
+    selectedUnit = unitId;
+    const progress = appState.face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+    const paused = progress[unitId]?.pausedSession;
+    document.getElementById('unit-mode-title').textContent = 'UNIT ' + unitId;
+    document.getElementById('unit-mode-description').textContent = 'Practice';
+    const available = MODE_OPTIONS[appState.face].filter(mode => appState.face === 'vocx' || dojoUnitsData[unitId]?.[mode.id]);
+    const resumeLabel = MODE_OPTIONS[appState.face].find(mode => mode.id === paused?.mode)?.label || 'Practice';
+    const chevron = '<i class="fa-solid fa-chevron-right mode-chevron" aria-hidden="true"></i>';
+    modeOptions.innerHTML = (paused ? '<button type="button" class="mode-option mode-resume" data-mode="resume"><span class="mode-icon" aria-hidden="true"><i class="fa-solid fa-play"></i></span><span class="mode-copy"><strong>途中から再開</strong><span class="mode-progress">' + resumeLabel + ' · ' + Math.min(paused.currentIndex + 1, paused.questions.length) + ' / ' + paused.questions.length + '</span></span>' + chevron + '</button>' : '')
+      + available.map(mode => '<button type="button" class="mode-option" data-mode="' + mode.id + '" aria-label="' + mode.accessibleLabel + (paused ? '、最初から' : '') + '"><span class="mode-icon" aria-hidden="true">' + mode.icon + '</span><span class="mode-copy"><strong class="mode-name">' + mode.label + '</strong>' + (mode.hint ? '<span class="mode-progress">' + mode.hint + '</span>' : '') + '</span>' + chevron + '</button>').join('');
+    modeDialog.style.setProperty('--mode-sheet-width', document.getElementById('phone-viewport').clientWidth + 'px');
+    playSound('tap');
+    modeDialog.showModal();
+  }
+  document.getElementById('units-list').addEventListener('click', event => {
+    const row = event.target.closest('.unit-row');
+    if (row) openUnitModes(row.dataset.unit);
+  });
+  document.getElementById('units-list').addEventListener('keydown', event => {
+    const row = event.target.closest('.unit-row');
+    if (row && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      openUnitModes(row.dataset.unit);
+    }
+  });
+  document.getElementById('unit-mode-close').addEventListener('click', () => modeDialog.close());
+  modeDialog.addEventListener('click', event => {
+    if (event.target !== modeDialog) return;
+    const rect = modeDialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) modeDialog.close();
+  });
+  let sheetPointer = null;
+  let sheetOriginY = 0;
+  let sheetOffsetY = 0;
+  function resetModeSheetDrag() {
+    sheetPointer = null;
+    sheetOffsetY = 0;
+    modeDialog.classList.remove('is-dragging');
+    modeDialog.style.transform = '';
+  }
+  modeDialog.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || !event.isPrimary || event.target.closest('button') || !event.target.closest('.mode-sheet-grip, .mode-dialog-header')) return;
+    sheetPointer = event.pointerId;
+    sheetOriginY = event.clientY;
+    sheetOffsetY = 0;
+    modeDialog.classList.add('is-dragging');
+    modeDialog.setPointerCapture(event.pointerId);
+  });
+  modeDialog.addEventListener('pointermove', event => {
+    if (event.pointerId !== sheetPointer) return;
+    sheetOffsetY = Math.max(0, event.clientY - sheetOriginY);
+    modeDialog.style.transform = 'translateY(' + sheetOffsetY + 'px)';
+  });
+  modeDialog.addEventListener('pointerup', event => {
+    if (event.pointerId !== sheetPointer) return;
+    const dismiss = sheetOffsetY >= 72;
+    if (modeDialog.hasPointerCapture(event.pointerId)) modeDialog.releasePointerCapture(event.pointerId);
+    resetModeSheetDrag();
+    if (dismiss) modeDialog.close();
+  });
+  modeDialog.addEventListener('pointercancel', resetModeSheetDrag);
+  modeDialog.addEventListener('close', resetModeSheetDrag);
+  modeOptions.addEventListener('click', event => {
+    const button = event.target.closest('[data-mode]');
+    if (!button || selectedUnit === null) return;
+    const unitId = selectedUnit;
+    const mode = button.dataset.mode;
+    const progress = appState.face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+    modeDialog.close();
+    if (mode === 'resume') {
+      const saved = progress[unitId]?.pausedSession;
+      if (saved) resumePausedSession(saved);
+    } else if (appState.face === 'vocx') {
+      startVocxQuiz(unitId, mode);
+    } else {
+      startDojoQuiz(unitId, mode);
+    }
+  });
+
+  /* =========================================================================
+   * 6. QUESTION BUILDERS FOR VOCX & DOJO
+   * ========================================================================= */
+  function buildBlankedSentence(sentence, word, inflected, showInitialHint) {
+    const candidates = [];
+    if (inflected && inflected.trim()) candidates.push(inflected.trim());
+    if (word && word.trim()) candidates.push(word.trim());
+
+    for (const target of candidates) {
+      const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+      const match = sentence.match(regex) || sentence.match(new RegExp(escaped, 'i'));
+      if (match) {
+        const matchedStr = match[0];
+        const replacement = showInitialHint
+          ? `${matchedStr.charAt(0)}_____`
+          : '______';
+        return sentence.replace(matchedStr, replacement);
+      }
+    }
+    return sentence;
+  }
+
+  function sanitizeDefinitionForType(defText, word, inflected) {
+    if (!defText) return '';
+    let result = defText;
+    const candidates = [];
+    if (inflected && inflected.trim()) candidates.push(inflected.trim());
+    if (word && word.trim()) candidates.push(word.trim());
+    for (const target of candidates) {
+      const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      result = result.replace(regex, '_____');
+    }
+    return result;
+  }
+
+  function startVocxQuiz(unitId, mode) {
+    const rows = vocxUnitsData[unitId];
+    if (!rows || rows.length === 0) return;
+
+    const shuffledRows = shuffleArray(rows);
+    const questions = shuffledRows.map(item => {
+      const distractors = shuffleArray(
+        rows.filter(r => r.word.toLowerCase() !== item.word.toLowerCase())
+      ).slice(0, 3);
+
+      if (mode === 'jpn-eng') {
+        const choices = shuffleArray([
+          capitalizeFirst(item.word),
+          ...distractors.map(d => capitalizeFirst(d.word))
+        ]);
+        const answerIndex = choices.findIndex(
+          c => c.toLowerCase() === item.word.toLowerCase()
+        );
+        return {
+          kind: 'vocx-jpn-eng',
+          prompt: item.jpn,
+          choices,
+          answerIndex,
+          wordDisplay: capitalizeFirst(item.word),
+          subDisplay: item.jpn,
+          rawItem: item
+        };
+      } else if (mode === 'eng-select') {
+        const distractorWords = distractors.map(d => capitalizeFirst(d.word));
+        const correctLabel = capitalizeFirst(item.inflected ? item.inflected : item.word);
+        const choices = shuffleArray([correctLabel, ...distractorWords]);
+        const answerIndex = choices.indexOf(correctLabel);
+        return {
+          kind: 'vocx-eng-select',
+          prompt: buildBlankedSentence(item.sentence, item.word, item.inflected, false),
+          choices,
+          answerIndex,
+          wordDisplay: capitalizeFirst(item.word),
+          subDisplay: item.jpn,
+          rawItem: item
+        };
+      } else {
+        // eng-type
+        return {
+          kind: 'vocx-eng-type',
+          defText: sanitizeDefinitionForType(item.def, item.word, item.inflected),
+          acceptedAnswers: [
+            item.word.toLowerCase(),
+            ...(item.inflected ? [item.inflected.toLowerCase()] : [])
+          ],
+          wordDisplay: capitalizeFirst(item.word),
+          subDisplay: item.jpn,
+          rawItem: item
+        };
+      }
+    });
+
+    const modeLabel = mode === 'jpn-eng'
+      ? 'JPN-ENG'
+      : mode === 'eng-select'
+        ? 'ENG-ENG Select'
+        : 'ENG-ENG Type';
+    showToast(modeLabel);
+
+    currentSession = {
+      face: 'vocx',
+      unitId,
+      mode,
+      questions,
+      currentIndex: 0,
+      correctCount: 0,
+      selectedChoice: null,
+      typedText: '',
+      answeredCurrent: false
+    };
+    openQuizScreen();
+  }
+
+  function stripLeadingQuestionNumber(text) {
+    return text
+      .replace(/^\d+\.\s*/, '')
+      .replace(/^A:\s*/i, '')
+      .replace(/\s*\/\s*B:\s*_+\s*$/i, '')
+      .trim();
+  }
+
+  function startDojoQuiz(unitId, part) {
+    const unitObj = dojoUnitsData[unitId];
+    if (!unitObj || !unitObj[part]) return;
+    const quizData = unitObj[part];
+    const questions = [];
+
+    if (part === 'part1') {
+      const sec1 = (quizData.sections || []).find(s => s.type === 'matching');
+      const sec2 = (quizData.sections || []).find(s => s.type === 'choice');
+
+      if (sec1 && sec1.questions) {
+        const allWords = Array.from(
+          new Set(
+            (sec1.options || [])
+              .filter(w => w && w !== '未解答')
+              .concat(sec1.questions.map(q => q.answer))
+          )
+        );
+        const pickedVocab = shuffleArray(sec1.questions).slice(0, 5);
+        pickedVocab.forEach(q => {
+          const distractors = shuffleArray(
+            allWords.filter(w => w.toLowerCase() !== q.answer.toLowerCase())
+          ).slice(0, 3);
+          const choices = shuffleArray([q.answer, ...distractors]);
+          questions.push({
+            kind: 'dojo-voc',
+            prompt: stripLeadingQuestionNumber(q.text),
+            choices,
+            answerIndex: choices.indexOf(q.answer),
+            wordDisplay: q.answer,
+            subDisplay: q.explanation || '',
+            rawItem: q
+          });
+        });
+      }
+
+      if (sec2 && sec2.questions) {
+        const pickedChoice = shuffleArray(sec2.questions).slice(0, 5);
+        pickedChoice.forEach(q => {
+          const pairs = q.choices.map((c, idx) => ({ text: c, isCorrect: idx === q.answer }));
+          const shuffledPairs = shuffleArray(pairs);
+          const answerIndex = shuffledPairs.findIndex(p => p.isCorrect);
+          questions.push({
+            kind: 'dojo-answer',
+            prompt: stripLeadingQuestionNumber(q.text).replace(/_{3,}/g, '_____'),
+            choices: shuffledPairs.map(p => p.text),
+            answerIndex,
+            wordDisplay: shuffledPairs[answerIndex].text,
+            subDisplay: q.explanation || '',
+            rawItem: q
+          });
+        });
+      }
+    } else {
+      // part2 (PDF phrasal verbs)
+      const sec1 = (quizData.sections || [])[0];
+      if (sec1 && sec1.questions) {
+        const picked = shuffleArray(sec1.questions).slice(0, 10);
+        picked.forEach(q => {
+          const pairs = q.choices.map((c, idx) => ({
+            text: capitalizeFirst(c),
+            isCorrect: idx === q.answer
+          }));
+          const shuffledPairs = shuffleArray(pairs);
+          const answerIndex = shuffledPairs.findIndex(p => p.isCorrect);
+          questions.push({
+            kind: 'dojo-phrasal',
+            prompt: stripLeadingQuestionNumber(q.text).replace(/_{3,}/g, '_____'),
+            choices: shuffledPairs.map(p => p.text),
+            answerIndex,
+            wordDisplay: shuffledPairs[answerIndex].text,
+            subDisplay: q.explanation || '',
+            rawItem: q
+          });
+        });
+      }
+    }
+
+    showToast(part === 'part1' ? 'Dojo Part 1' : 'Dojo Part 2');
+    currentSession = {
+      face: 'dojo',
+      unitId,
+      mode: part,
+      questions,
+      currentIndex: 0,
+      correctCount: 0,
+      selectedChoice: null,
+      typedText: '',
+      answeredCurrent: false
+    };
+    openQuizScreen();
+  }
+
+  function resumePausedSession(savedSession) {
+    currentSession = structuredClone(savedSession);
+    if (currentSession.answeredCurrent) {
+      currentSession.currentIndex++;
+      if (currentSession.currentIndex >= currentSession.questions.length) {
+        finishQuizSession();
+        return;
+      }
+    }
+    const selectedChoice = currentSession.answeredCurrent ? null : currentSession.selectedChoice;
+    const typedText = currentSession.answeredCurrent ? '' : currentSession.typedText;
+    currentSession.answeredCurrent = false;
+    showToast('Resumed');
+    openQuizScreen();
+    currentSession.selectedChoice = selectedChoice;
+    currentSession.typedText = typedText || '';
+    syncSlideAvailability();
+    const input = document.getElementById('type-native-input');
+    if (input) input.value = currentSession.typedText;
+    document.querySelectorAll('.choice-btn').forEach(button => {
+      button.classList.toggle('selected', Number(button.dataset.choiceIndex) === selectedChoice);
+    });
+  }
+
+  /* =========================================================================
+   * 7. QUIZ SCREEN RENDERING & INTERACTION
+   * ========================================================================= */
+  function openQuizScreen() {
+    document.getElementById('screen-main').classList.remove('active');
+    document.getElementById('screen-quiz').classList.add('active');
+    const sheet = document.getElementById('quiz-sheet');
+    sheet.style.transform = 'translateY(0px)';
+    closeCheckSheet();
+    renderCurrentQuestion();
+  }
+
+  function closeQuizScreen() {
+    closeCheckSheet();
+    document.getElementById('screen-quiz').classList.remove('active');
+    document.getElementById('screen-main').classList.add('active');
+    currentSession = null;
+    renderHomeUnits();
+  }
+
+  function updateProgressBar() {
+    if (!currentSession) return;
+    const total = Math.max(1, currentSession.questions.length);
+    const ratio = Math.min(1, Math.max(0, (currentSession.currentIndex + 1) / total));
+    const trackEl = document.getElementById('quiz-progress-track');
+    const trackWidth = (trackEl && trackEl.clientWidth) ? trackEl.clientWidth : 210;
+    const thumbSize = 18;
+    const fillWidth = Math.max(thumbSize, Math.round(thumbSize + (trackWidth - thumbSize) * ratio));
+    const thumbLeft = fillWidth - thumbSize;
+
+    document.getElementById('quiz-progress-fill').style.width = `${fillWidth}px`;
+    document.getElementById('quiz-progress-thumb').style.left = `${thumbLeft}px`;
+    document.getElementById('quiz-unit-num').textContent = currentSession.unitId;
+  }
+
+  /* Sync --app-height to eliminate iOS standalone black-translucent bottom gap */
+  function syncViewportHeight() {
+    const innerH = window.innerHeight || document.documentElement.clientHeight || 800;
+    const screenH = window.screen && window.screen.height ? window.screen.height : innerH;
+    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+    const isStandalone =
+      window.navigator.standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches;
+
+    // On iPhone PWA with apple-mobile-web-app-status-bar-style="black-translucent",
+    // WebKit shifts origin to y=0 but reports innerHeight = screen.height - statusBarHeight.
+    // Using screenH in portrait standalone fills the entire physical screen down to the bottom edge.
+    let targetH = innerH;
+    if (isPortrait && screenH > innerH && (screenH - innerH) <= 120 && (isStandalone || (screenH - innerH) <= 70)) {
+      targetH = screenH;
+    }
+    document.documentElement.style.setProperty('--app-height', `${targetH}px`);
+    if (window.scrollY !== 0 || window.scrollX !== 0) {
+      window.scrollTo(0, 0);
+    }
+  }
+
+  /* Prevent root window scrolling/bouncing when touching the navigation bar, header, Mypage, or overscrolling */
+  let lastTouchY = 0;
+  document.addEventListener('touchstart', e => {
+    if (e.touches && e.touches.length === 1) {
+      lastTouchY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (e.touches && e.touches.length > 1) {
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+    const scrollEl = e.target.closest('.units-scroll, .quiz-content, .unit-mode-dialog, .check-sheet');
+    if (!scrollEl) {
+      // Touched navigation bar (.bottom-footer), header (.app-header), Mypage, modals, etc. -> block page scroll
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+    if (scrollEl.scrollHeight <= scrollEl.clientHeight + 1) {
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+    const curY = e.touches && e.touches.length ? e.touches[0].clientY : lastTouchY;
+    const dy = curY - lastTouchY;
+    lastTouchY = curY;
+
+    // Prevent scroll-chaining to the root window at top and bottom boundaries
+    if (dy > 0 && scrollEl.scrollTop <= 0) {
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+    if (dy < 0 && scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1) {
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+  }, { passive: false });
+
+  window.addEventListener('scroll', () => {
+    if (window.scrollY !== 0 || window.scrollX !== 0) {
+      window.scrollTo(0, 0);
+    }
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    syncViewportHeight();
+    if (currentSession) {
+      updateProgressBar();
+    }
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(syncViewportHeight, 60);
+  });
+  window.addEventListener('pageshow', syncViewportHeight);
+
+  function renderCurrentQuestion() {
+    if (!currentSession) return;
+    updateProgressBar();
+    closeCheckSheet();
+    resetSlideThumb();
+
+    const q = currentSession.questions[currentSession.currentIndex];
+    currentSession.selectedChoice = null;
+    currentSession.typedText = '';
+    currentSession.answeredCurrent = false;
+
+    const contentEl = document.getElementById('quiz-content');
+    syncSlideAvailability();
+    const slideWrap = document.getElementById('slide-next-wrap');
+
+    if (q.kind === 'vocx-eng-type') {
+      slideWrap.style.display = 'none';
+      const raw = q.rawItem;
+      const sentenceText = buildBlankedSentence(
+        raw.sentence,
+        raw.word,
+        raw.inflected,
+        appState.settings.initialHint
+      );
+      const safeDef = sanitizeDefinitionForType(q.defText || raw.def, raw.word, raw.inflected);
+      contentEl.innerHTML = `
+        <div class="quiz-prompt-type-wrap">
+          <div class="quiz-prompt-type-sentence">${escapeHtml(sentenceText)}</div>
+          <div class="quiz-prompt-type-def">${escapeHtml(safeDef)}</div>
+        </div>
+        <form id="type-input-form" class="type-input-box" autocomplete="off">
+          <input
+            id="type-native-input"
+            class="type-native-input"
+            type="text"
+            inputmode="text"
+            autocapitalize="none"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            enterkeyhint="send"
+            maxlength="28"
+            aria-label="Type English word"
+          />
+          <button id="type-submit-btn" class="type-submit-btn" type="submit" aria-label="Submit Answer">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 11V1M9 4.75L5 1L1 4.75" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </form>
+      `;
+      const formEl = document.getElementById('type-input-form');
+      const inputEl = document.getElementById('type-native-input');
+      inputEl.addEventListener('input', () => {
+        if (!currentSession) return;
+        currentSession.typedText = inputEl.value;
+      });
+      formEl.addEventListener('click', e => {
+        if (e.target !== inputEl && !e.target.closest('#type-submit-btn')) {
+          inputEl.focus();
+        }
+      });
+      formEl.addEventListener('submit', e => {
+        e.preventDefault();
+        submitTypeAnswer();
+      });
+      setTimeout(() => {
+        if (currentSession && !currentSession.answeredCurrent) {
+          inputEl.focus();
+        }
+      }, 60);
+    } else {
+      slideWrap.style.display = 'flex';
+
+      let promptClass = 'quiz-prompt-jpn';
+      let choicesClass = 'choices-stack-4';
+
+      if (q.kind === 'vocx-jpn-eng') {
+        promptClass = 'quiz-prompt-jpn';
+        choicesClass = 'choices-stack-4';
+      } else if (q.kind === 'vocx-eng-select') {
+        promptClass = 'quiz-prompt-jpn quiz-prompt-eng-select';
+        choicesClass = 'choices-stack-4';
+      } else if (q.kind === 'dojo-voc') {
+        promptClass = 'quiz-prompt-eng-select';
+        choicesClass = 'choices-grid-4';
+      } else if (q.kind === 'dojo-answer') {
+        promptClass = 'quiz-prompt-dojo-stack';
+        choicesClass = 'choices-stack-3';
+      } else if (q.kind === 'dojo-phrasal') {
+        promptClass = 'quiz-prompt-dojo-stack';
+        choicesClass = 'choices-stack-2';
+      }
+
+      const promptFontSize =
+        q.prompt.length > 85 ? 'font-size: 17px;' :
+        q.prompt.length > 60 ? 'font-size: 19px;' : '';
+
+      const buttonsHtml = q.choices.map((choiceText, idx) => `
+        <button type="button" class="choice-btn" data-choice-index="${idx}">
+          ${escapeHtml(choiceText)}
+        </button>
+      `).join('');
+
+      contentEl.innerHTML = `
+        <div class="${promptClass}" style="${promptFontSize}">${escapeHtml(q.prompt)}</div>
+        <div class="${choicesClass}">
+          ${buttonsHtml}
+        </div>
+      `;
+
+      contentEl.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (currentSession.answeredCurrent) return;
+          const idx = Number(btn.dataset.choiceIndex);
+          currentSession.selectedChoice = idx;
+          syncSlideAvailability();
+          contentEl.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+
+          // Only reveal the answer immediately if the user explicitly enabled "スライドをスキップ".
+          // By default (skipSlide = false), the user must slide "Slide to Next" to approve.
+          if (appState.settings.skipSlide) {
+            confirmChoiceAnswer();
+          } else {
+            playSound('tap');
+          }
+        });
+      });
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function confirmChoiceAnswer() {
+    if (!currentSession || currentSession.answeredCurrent) return;
+    if (currentSession.selectedChoice === null) return;
+
+    currentSession.answeredCurrent = true;
+    syncSlideAvailability();
+    const q = currentSession.questions[currentSession.currentIndex];
+    const isCorrect = currentSession.selectedChoice === q.answerIndex;
+    if (isCorrect) {
+      currentSession.correctCount++;
+      playSound('correct');
+    } else {
+      playSound('wrong');
+    }
+    openCheckSheet(isCorrect, q.wordDisplay, q.subDisplay);
+  }
+
+  function submitTypeAnswer() {
+    if (!currentSession || currentSession.answeredCurrent) return;
+    const q = currentSession.questions[currentSession.currentIndex];
+    if (q.kind !== 'vocx-eng-type') return;
+    const inputEl = document.getElementById('type-native-input');
+    if (inputEl) {
+      currentSession.typedText = inputEl.value;
+    }
+    const typed = (currentSession.typedText || '').trim().toLowerCase();
+    if (!typed) return;
+    if (inputEl) {
+      inputEl.blur();
+    }
+
+    currentSession.answeredCurrent = true;
+    const isCorrect = q.acceptedAnswers.includes(typed);
+    if (isCorrect) {
+      currentSession.correctCount++;
+      playSound('correct');
+    } else {
+      playSound('wrong');
+    }
+    openCheckSheet(isCorrect, q.wordDisplay, q.subDisplay);
+  }
+
+  function openCheckSheet(isCorrect, wordText, subText) {
+    const titleEl = document.getElementById('check-status-title');
+    const wordEl = document.getElementById('check-answer-word');
+    const subEl = document.getElementById('check-answer-sub');
+
+    titleEl.textContent = isCorrect ? 'Correct!' : 'Incorrect';
+    const sheet = document.getElementById('check-sheet');
+    sheet.dataset.result = isCorrect ? 'correct' : 'wrong';
+    titleEl.classList.toggle('wrong', !isCorrect);
+    wordEl.textContent = wordText;
+    subEl.textContent = subText;
+
+    document.getElementById('check-backdrop').classList.add('open');
+    sheet.classList.add('open');
+  }
+
+  function closeCheckSheet() {
+    document.getElementById('check-backdrop').classList.remove('open');
+    document.getElementById('check-sheet').classList.remove('open');
+  }
+
+  function advanceToNextQuestion() {
+    if (!currentSession) return;
+    playSound('tap');
+    closeCheckSheet();
+
+    if (currentSession.currentIndex + 1 < currentSession.questions.length) {
+      currentSession.currentIndex++;
+      renderCurrentQuestion();
+    } else {
+      finishQuizSession();
+    }
+  }
+
+  function finishQuizSession() {
+    if (!currentSession) return;
+    playSound('complete');
+    const { face, unitId, mode, correctCount, questions } = currentSession;
+    const scorePct = Math.round((correctCount / Math.max(1, questions.length)) * 100);
+    const progMap = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+
+    const existing = progMap[unitId] || { clearedModes: {}, bestScorePct: 0, pausedSession: null };
+    existing.clearedModes = existing.clearedModes || {};
+    existing.clearedModes[mode] = true;
+    existing.perfectClearCount = getPerfectClearCount(existing);
+    if (questions.length > 0 && correctCount === questions.length) {
+      existing.perfectClearCount++;
+    }
+    existing.bestScorePct = Math.max(existing.bestScorePct || 0, scorePct);
+    existing.pausedSession = null;
+    progMap[unitId] = existing;
+
+    saveState();
+    closeQuizScreen();
+  }
+
+  /* =========================================================================
+   * 8. SLIDE TO NEXT GESTURE & SLIDE DOWN TO PAUSE GESTURE
+   * ========================================================================= */
+  const slideWrap = document.getElementById('slide-next-wrap');
+  const slideThumb = document.getElementById('slide-next-thumb');
+  let slideDragging = false;
+  let slideStartX = 0;
+  let slideCurrentX = 0;
+  let slideSoundPlayed = false;
+
+  function getMaxSlideX() {
+    const wrapWidth = (slideWrap && slideWrap.clientWidth) ? slideWrap.clientWidth : 220;
+    const thumbWidth = (slideThumb && slideThumb.offsetWidth) ? slideThumb.offsetWidth : 60;
+    return Math.max(0, wrapWidth - thumbWidth + 2);
+  }
+
+  function syncSlideAvailability() {
+    const enabled = !!currentSession && currentSession.selectedChoice != null && !currentSession.answeredCurrent;
+    slideWrap.classList.toggle('is-disabled', !enabled);
+    slideWrap.classList.toggle('is-submitted', !!currentSession?.answeredCurrent);
+    slideWrap.setAttribute('aria-disabled', String(!enabled));
+    slideThumb.disabled = !enabled;
+    slideThumb.setAttribute('aria-label', enabled ? 'Slide to answer' : 'Select an answer');
+    document.getElementById('slide-next-label').textContent = enabled ? 'Slide to Next' : 'Select an answer';
+  }
+
+  function resetSlideThumb() {
+    slideDragging = false;
+    slideCurrentX = 0;
+    slideSoundPlayed = false;
+    slideThumb.classList.remove('dragging');
+    slideWrap.classList.remove('is-sliding', 'is-submitted');
+    slideThumb.style.transform = 'translateX(0px)';
+  }
+
+  slideThumb.addEventListener('pointerdown', e => {
+    if (!currentSession || currentSession.answeredCurrent) return;
+    if (currentSession.selectedChoice === null) {
+      return;
+    }
+    slideDragging = true;
+    slideSoundPlayed = false;
+    slideStartX = e.clientX - slideCurrentX;
+    slideThumb.classList.add('dragging');
+    slideThumb.setPointerCapture(e.pointerId);
+  });
+
+  slideThumb.addEventListener('pointermove', e => {
+    if (!slideDragging) return;
+    const maxSlideX = getMaxSlideX();
+    slideCurrentX = Math.max(0, Math.min(maxSlideX, e.clientX - slideStartX));
+    slideWrap.classList.toggle('is-sliding', slideCurrentX > 3);
+    if (!slideSoundPlayed && slideCurrentX > 14) {
+      slideSoundPlayed = true;
+      playSound('slide');
+    }
+    slideThumb.style.transform = `translateX(${slideCurrentX}px)`;
+  });
+
+  function endSlideDrag() {
+    if (!slideDragging) return;
+    slideDragging = false;
+    slideThumb.classList.remove('dragging');
+    const maxSlideX = getMaxSlideX();
+    if (slideCurrentX >= maxSlideX * 0.62) {
+      slideThumb.style.transform = `translateX(${maxSlideX}px)`;
+      confirmChoiceAnswer();
+    } else {
+      resetSlideThumb();
+    }
+  }
+
+  slideThumb.addEventListener('pointerup', endSlideDrag);
+  slideThumb.addEventListener('pointercancel', resetSlideThumb);
+  slideThumb.addEventListener('keydown', event => {
+    if (!slideThumb.disabled && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      confirmChoiceAnswer();
+    }
+  });
+
+  /* Slide Down Quiz Sheet to Pause & Save Progress */
+  const quizSheet = document.getElementById('quiz-sheet');
+  let sheetDragging = false;
+  let sheetStartY = 0;
+  let sheetDeltaY = 0;
+
+  quizSheet.addEventListener('pointerdown', e => {
+    if (!currentSession) return;
+    if (e.target.closest('button, input, .slide-next-wrap, .type-input-box')) return;
+    sheetDragging = true;
+    sheetStartY = e.clientY;
+    sheetDeltaY = 0;
+    quizSheet.classList.add('dragging');
+  });
+
+  window.addEventListener('pointermove', e => {
+    if (!sheetDragging) return;
+    const dy = e.clientY - sheetStartY;
+    sheetDeltaY = Math.max(0, dy);
+    quizSheet.style.transform = `translateY(${sheetDeltaY}px)`;
+  });
+
+  function endSheetDrag() {
+    if (!sheetDragging) return;
+    sheetDragging = false;
+    quizSheet.classList.remove('dragging');
+    if (sheetDeltaY > 95 && currentSession) {
+      // Slide down & save as Paused!
+      const inputEl = document.getElementById('type-native-input');
+      if (inputEl) inputEl.blur();
+      quizSheet.style.transform = 'translateY(100%)';
+      const { face, unitId } = currentSession;
+      const progMap = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+      const existing = progMap[unitId] || { clearedModes: {}, bestScorePct: 0, pausedSession: null };
+      existing.pausedSession = structuredClone(currentSession);
+      progMap[unitId] = existing;
+      saveState();
+      playSound('slide');
+      setTimeout(() => {
+        closeQuizScreen();
+      }, 220);
+    } else {
+      quizSheet.style.transform = 'translateY(0px)';
+    }
+  }
+
+  window.addEventListener('pointerup', endSheetDrag);
+  window.addEventListener('pointercancel', endSheetDrag);
+
+  /* =========================================================================
+   * 9. KEYBOARD SHORTCUTS (Check Sheet / Profile Name Modal)
+   * ========================================================================= */
+  window.addEventListener('keydown', e => {
+    if (document.getElementById('name-modal').classList.contains('open')) {
+      if (e.key === 'Enter') saveProfileName();
+      return;
+    }
+    if (!currentSession) return;
+    if (document.getElementById('check-sheet').classList.contains('open')) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        advanceToNextQuestion();
+      }
+    }
+  });
+
+  /* =========================================================================
+   * 10. TOP TITLE FACE SWITCHING, NAVIGATION, SETTINGS & MODALS
+   * ========================================================================= */
+  function switchFace(face) {
+    if (appState.face === face) return;
+    playSound('tap');
+    appState.face = face;
+    saveState();
+    renderHomeUnits();
+    document.getElementById('tab-home').scrollTop = 0;
+  }
+  document.getElementById('face-vocx-btn').addEventListener('click', () => switchFace('vocx'));
+  document.getElementById('face-dojo-btn').addEventListener('click', () => switchFace('dojo'));
+
+  const unitsScroller = document.getElementById('tab-home');
+  const unitsList = document.getElementById('units-list');
+  const mainScreen = document.getElementById('screen-main');
+  const bottomFooter = document.querySelector('.bottom-footer');
+  let unitHintsFrame = null;
+  function scheduleUnitScrollHints() {
+    if (unitHintsFrame !== null) return;
+    unitHintsFrame = requestAnimationFrame(() => {
+      unitHintsFrame = null;
+      updateUnitScrollHints();
+    });
+  }
+  const unitHintUp = document.getElementById('units-hint-up');
+  const unitHintDown = document.getElementById('units-hint-down');
+  function updateUnitScrollHints() {
+    const visible = unitsScroller.clientHeight > 0;
+    const viewport = mainScreen.getBoundingClientRect();
+    const area = unitsScroller.getBoundingClientRect();
+    const footer = bottomFooter.getBoundingClientRect();
+    const lastUnit = unitsList.lastElementChild;
+    const lastBottom = lastUnit?.classList.contains('unit-row') ? lastUnit.getBoundingClientRect().bottom : null;
+    unitHintUp.style.top = (area.top - viewport.top + 8) + 'px';
+    unitHintDown.style.top = (Math.min(area.bottom, footer.top) - viewport.top - 46) + 'px';
+    unitHintUp.hidden = !visible || unitsScroller.scrollTop <= 2;
+    // Only indicate actual unit content hidden beneath the footer, not bottom padding.
+    unitHintDown.hidden = !visible || lastBottom === null || lastBottom <= Math.min(area.bottom, footer.top) + 2;
+  }
+  unitsScroller.addEventListener('scroll', scheduleUnitScrollHints, { passive: true });
+  const unitResizeObserver = new ResizeObserver(scheduleUnitScrollHints);
+  [unitsScroller, unitsList, bottomFooter].forEach(el => unitResizeObserver.observe(el));
+  window.addEventListener('resize', scheduleUnitScrollHints);
+  document.fonts.ready.then(scheduleUnitScrollHints);
+
+  function switchTab(tab, withSound = true) {
+    if (withSound) playSound('tap');
+    appState.activeTab = tab;
+    saveState();
+    const isHome = tab === 'home';
+    document.getElementById('nav-home-btn').setAttribute('aria-current', isHome ? 'page' : 'false');
+    document.getElementById('nav-mypage-btn').setAttribute('aria-current', isHome ? 'false' : 'page');
+    scheduleUnitScrollHints();
+    document.getElementById('tab-home').style.display = isHome ? 'block' : 'none';
+    document.getElementById('tab-mypage').style.display = isHome ? 'none' : 'flex';
+    document.getElementById('icon-home-active').style.display = isHome ? 'block' : 'none';
+    document.getElementById('icon-home-inactive').style.display = isHome ? 'none' : 'block';
+    document.getElementById('icon-mypage-active').style.display = isHome ? 'none' : 'block';
+    document.getElementById('icon-mypage-inactive').style.display = isHome ? 'block' : 'none';
+  }
+
+  document.getElementById('nav-home-btn').addEventListener('click', () => switchTab('home', true));
+  document.getElementById('nav-mypage-btn').addEventListener('click', () => switchTab('mypage', true));
+
+  /* Mypage Settings Toggles */
+  function syncSettingsUI() {
+    document.getElementById('profile-name').textContent = appState.profileName || '@Name';
+    const hintBtn = document.getElementById('toggle-hint');
+    const skipBtn = document.getElementById('toggle-skip-slide');
+    const soundBtn = document.getElementById('toggle-sound');
+
+    hintBtn.classList.toggle('on', !!appState.settings.initialHint);
+    hintBtn.setAttribute('aria-checked', String(!!appState.settings.initialHint));
+
+    skipBtn.classList.toggle('on', !!appState.settings.skipSlide);
+    skipBtn.setAttribute('aria-checked', String(!!appState.settings.skipSlide));
+
+    soundBtn.classList.toggle('on', !!appState.settings.soundEffects);
+    soundBtn.setAttribute('aria-checked', String(!!appState.settings.soundEffects));
+  }
+
+  document.getElementById('toggle-hint').addEventListener('click', () => {
+    appState.settings.initialHint = !appState.settings.initialHint;
+    saveState();
+    syncSettingsUI();
+    playSound('tap');
+  });
+
+  document.getElementById('toggle-skip-slide').addEventListener('click', () => {
+    appState.settings.skipSlide = !appState.settings.skipSlide;
+    saveState();
+    syncSettingsUI();
+    playSound('tap');
+  });
+
+  document.getElementById('toggle-sound').addEventListener('click', () => {
+    appState.settings.soundEffects = !appState.settings.soundEffects;
+    saveState();
+    syncSettingsUI();
+    playSound('tap');
+  });
+
+  /* Profile Name Editing */
+  const nameModal = document.getElementById('name-modal');
+  const nameInput = document.getElementById('name-input-field');
+
+  function openNameModal() {
+    playSound('tap');
+    nameInput.value = appState.profileName || '@Name';
+    nameModal.classList.add('open');
+    setTimeout(() => nameInput.focus(), 50);
+  }
+
+  function saveProfileName() {
+    const val = nameInput.value.trim();
+    if (val) {
+      appState.profileName = val.startsWith('@') ? val : `@${val}`;
+      saveState();
+      syncSettingsUI();
+    }
+    nameModal.classList.remove('open');
+    playSound('tap');
+  }
+
+  document.getElementById('profile-edit-btn').addEventListener('click', openNameModal);
+  document.getElementById('profile-name').addEventListener('click', openNameModal);
+  document.getElementById('name-save-btn').addEventListener('click', saveProfileName);
+  document.getElementById('name-cancel-btn').addEventListener('click', () => {
+    nameModal.classList.remove('open');
+    playSound('tap');
+  });
+
+  /* Quit Confirmation Modal (X Button discards progress) */
+  const quitModal = document.getElementById('quit-modal');
+  document.getElementById('quiz-close-btn').addEventListener('click', () => {
+    playSound('tap');
+    quitModal.classList.add('open');
+  });
+
+  document.getElementById('quit-confirm-no').addEventListener('click', () => {
+    playSound('tap');
+    quitModal.classList.remove('open');
+  });
+
+  document.getElementById('quit-confirm-yes').addEventListener('click', () => {
+    playSound('tap');
+    quitModal.classList.remove('open');
+    if (currentSession) {
+      const { face, unitId } = currentSession;
+      const progMap = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+      if (progMap[unitId] && progMap[unitId].pausedSession) {
+        progMap[unitId].pausedSession = null;
+        saveState();
+      }
+    }
+    closeQuizScreen();
+  });
+
+  document.getElementById('check-next-btn').addEventListener('click', advanceToNextQuestion);
+
+  /* Initialize */
+  syncViewportHeight();
+  syncSettingsUI();
+  switchTab(appState.activeTab || 'home', false);
+  renderHomeUnits();
+  tryFetchLiveFiles();
+
+  /* Register PWA Service Worker */
+  if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        reg.update().catch(() => {});
+      }).catch(() => {});
+    });
+  }
+})();
