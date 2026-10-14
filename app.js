@@ -268,7 +268,8 @@
       return { status: 'paused', label: '続きから', badge: PAUSE_BADGE_SVG };
     }
     const cleared = entry.clearedModes || {};
-    const clearedCount = Object.values(cleared).filter(Boolean).length;
+    const standardModes = face === 'vocx' ? ['jpn-eng', 'eng-select', 'eng-type'] : ['part1', 'part2'];
+    const clearedCount = standardModes.filter(mode => cleared[mode]).length;
     const requiredModes = face === 'vocx' ? 3 : 2;
     const perfectCount = getPerfectClearCount(entry);
 
@@ -282,7 +283,7 @@
         badge: clearedCount >= requiredModes ? CHECK_BADGE_SVG : ''
       };
     }
-    if (clearedCount > 0) {
+    if (Object.values(cleared).some(Boolean)) {
       return { status: 'nice', label: 'Nice!', badge: '' };
     }
     return { status: 'untried', label: 'Untried', badge: '' };
@@ -330,7 +331,8 @@
     vocx: [
       { id: 'jpn-eng', label: JP_FLAG + ' → ' + EN_FLAG, icon: 'あ → A', accessibleLabel: '日本語から英単語を選ぶ' },
       { id: 'eng-select', label: EN_FLAG + ' → ' + EN_FLAG, icon: 'A → A', accessibleLabel: '英語の説明から英単語を選ぶ' },
-      { id: 'eng-type', label: '英単語を入力', hint: '英文の空欄を埋める', icon: '<i class="fa-regular fa-keyboard"></i>', accessibleLabel: '英文の空欄に英単語を入力する' }
+      { id: 'eng-type', label: '英単語を入力', hint: '英文の空欄を埋める', icon: '<i class="fa-regular fa-keyboard"></i>', accessibleLabel: '英文の空欄に英単語を入力する' },
+      { id: 'oni', label: '鬼モード', hint: '3つの出題形式をシャッフル', icon: '鬼', accessibleLabel: '鬼モード、3つの出題形式を混ぜて出題する' }
     ],
     dojo: [
       { id: 'part1', label: 'Part 1', icon: '01', accessibleLabel: '単語の組み合わせと選択問題' },
@@ -463,12 +465,17 @@
     if (!rows || rows.length === 0) return;
 
     const shuffledRows = shuffleArray(rows);
-    const questions = shuffledRows.map(item => {
+    const mixedModes = shuffleArray(['jpn-eng', 'eng-select', 'eng-type']);
+    const questionModes = mode === 'oni'
+      ? shuffleArray(shuffledRows.map((_, index) => mixedModes[index % mixedModes.length]))
+      : shuffledRows.map(() => mode);
+    const questions = shuffledRows.map((item, index) => {
+      const questionMode = questionModes[index];
       const distractors = shuffleArray(
         rows.filter(r => r.word.toLowerCase() !== item.word.toLowerCase())
       ).slice(0, 3);
 
-      if (mode === 'jpn-eng') {
+      if (questionMode === 'jpn-eng') {
         const choices = shuffleArray([
           capitalizeFirst(item.word),
           ...distractors.map(d => capitalizeFirst(d.word))
@@ -485,7 +492,7 @@
           subDisplay: item.jpn,
           rawItem: item
         };
-      } else if (mode === 'eng-select') {
+      } else if (questionMode === 'eng-select') {
         const distractorWords = distractors.map(d => capitalizeFirst(d.word));
         const correctLabel = capitalizeFirst(item.inflected ? item.inflected : item.word);
         const choices = shuffleArray([correctLabel, ...distractorWords]);
@@ -515,7 +522,7 @@
       }
     });
 
-    const modeLabel = mode === 'jpn-eng'
+    const modeLabel = mode === 'oni' ? '鬼モード' : mode === 'jpn-eng'
       ? 'JPN-ENG'
       : mode === 'eng-select'
         ? 'ENG-ENG Select'

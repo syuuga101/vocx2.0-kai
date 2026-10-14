@@ -6,7 +6,9 @@ const c={document:{getElementById:el},appState:{face:'vocx',vocxProgress:{},dojo
 vm.createContext(c);
 const start=js.indexOf('  const JP_FLAG');
 vm.runInContext(js.slice(start,js.indexOf('  /* ===',start)),c);
-c.openUnitModes('02');assert(el('unit-mode-dialog').open);assert.equal((el('unit-mode-options').innerHTML.match(/data-mode=/g)||[]).length,3);
+c.openUnitModes('02');assert(el('unit-mode-dialog').open);assert.equal((el('unit-mode-options').innerHTML.match(/data-mode=/g)||[]).length,4);
+assert(el('unit-mode-options').innerHTML.includes('鬼モード'));
+el('unit-mode-options').listeners.click({target:{closest:()=>({dataset:{mode:'oni'}})}});assert.equal(c.started.mode,'oni');
 el('unit-mode-options').listeners.click({target:{closest:()=>({dataset:{mode:'eng-type'}})}});assert.equal(c.started.mode,'eng-type');assert(!el('unit-mode-dialog').open);
 c.appState.face='dojo';c.openUnitModes('02');assert.equal((el('unit-mode-options').innerHTML.match(/data-mode=/g)||[]).length,2);
 const paused={mode:'part2',currentIndex:2,questions:[1,2,3,4]};c.appState.dojoProgress['02']={pausedSession:paused};c.openUnitModes('02');assert(el('unit-mode-options').innerHTML.includes('3 / 4'));

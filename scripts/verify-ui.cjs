@@ -38,3 +38,10 @@ for(const [height,top,bottom,up,down] of [[600,0,1800,true,false],[600,300,1500,
 }
 console.log('OK: local assets, element IDs, CSS structure, perfect-clear progression, scroll indicators');
 
+context.appState.vocxProgress['03'] = {clearedModes: {'jpn-eng': true, 'eng-select': true, oni: true}, perfectClearCount: 1};
+assert.equal(context.getUnitEvaluation('vocx', '03').badge, '', 'Oni does not replace the third standard mode');
+context.appState.vocxProgress['03'].clearedModes['eng-type'] = true;
+assert.equal(context.getUnitEvaluation('vocx', '03').badge, 'check');
+context.appState.vocxProgress['04'] = {clearedModes: {oni: true}, perfectClearCount: 0};
+assert.equal(context.getUnitEvaluation('vocx', '04').status, 'nice');
+
