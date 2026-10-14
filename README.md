@@ -14,3 +14,11 @@ Vocxの「鬼モード」は、ユニットの20語を1回ずつ出題し、日�
 - `sw.js`：PWAキャッシュ。配信ファイルを更新するときは`CACHE_NAME`も更新します。
 - `design/mode-icons/`：未採用のモードアイコン5案。SVGと比較画像。
 - `scripts/`：Node.jsで実行する簡易検証
+
+## 学習データの更新
+
+`vocx/*.csv`・`dojo/*/part*.json`を編集したら、`node scripts/build-data.cjs`で軽量な`data.js`を再生成します。直接HTMLを開く場合やオフライン時も最新データを使えるよう、生成したファイルも一緒に保存してください。HTTP配信時は引き続きCSV・JSONを読み込みます。
+
+PWAは画像・通常の音声取得をキャッシュ優先、HTML・CSS・JavaScript・学習データはネットワーク優先で読み込みます。更新時は`sw.js`の`CACHE_NAME`を変更してください。
+
+検証はプロジェクトのルートで`node scripts/verify-*.cjs`を各ファイルについて実行します。

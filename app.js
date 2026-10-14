@@ -13,7 +13,6 @@
     profileName: '@Name',
     settings: {
       initialHint: true,
-      skipSlide: false,    // Must default to false so Slide to Next is required before revealing the answer
       soundEffects: true   // Enabled by default for ./se/ audio files
     },
     // Unit progress per face:
@@ -26,6 +25,7 @@
   let vocxUnitsData = Object.assign({}, window.VOCX_FALLBACK_DATA || {});
   let dojoUnitsData = Object.assign({}, window.DOJO_FALLBACK_DATA || {});
   let currentSession = null;
+  let cancelChoicePress = null;
   let studyClock = null;
   let studyTick = 0;
 
@@ -39,14 +39,16 @@
     const now = performance.now();
     currentSession.questionTimeMs = (currentSession.questionTimeMs || 0) + now - studyClock.startedAt;
     studyClock.startedAt = now;
-    document.getElementById('quiz-study-time').textContent = formatStudyTime(currentSession.questionTimeMs);
+    const timer = document.getElementById('quiz-study-time');
+    const label = formatStudyTime(currentSession.questionTimeMs);
+    if (timer.textContent !== label) timer.textContent = label;
   }
 
   function startQuestionClock() {
     stopStudyClock();
     studyClock = { startedAt: performance.now() };
     recordStudyTime();
-    studyTick = setInterval(recordStudyTime, 250);
+    studyTick = setInterval(recordStudyTime, 1000);
   }
 
   function stopStudyClock() {
@@ -68,7 +70,7 @@
           dojoProgress: parsed.dojoProgress || {}
         };
       }
-      // Migrate progress from v1 if present, while resetting skipSlide=false & soundEffects=true
+      // Migrate progress from v1 while preserving progress and enabling sound effects.
       const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
       if (legacyRaw) {
         const legacy = JSON.parse(legacyRaw);
@@ -81,7 +83,6 @@
             initialHint: legacy.settings && typeof legacy.settings.initialHint === 'boolean'
               ? legacy.settings.initialHint
               : true,
-            skipSlide: false,
             soundEffects: true
           },
           vocxProgress: legacy.vocxProgress || {},
@@ -202,7 +203,7 @@
   async function tryFetchLiveFiles() {
     if (window.location.protocol === 'file:') return;
     const unitPromises = [];
-    for (let i = 1; i <= 27; i++) {
+    for (let i = 2; i <= 27; i++) {
       const id = String(i).padStart(2, '0');
       unitPromises.push(
         fetch(`./vocx/${id}.csv`)
@@ -357,8 +358,8 @@
   const EN_FLAG = '<img class="mode-flag" src="./sys/flag-gb.svg" alt="英語" />';
   const MODE_OPTIONS = {
     vocx: [
-      { id: 'jpn-eng', label: JP_FLAG + ' → ' + EN_FLAG, icon: 'あ → A', accessibleLabel: '日本語から英単語を選ぶ' },
-      { id: 'eng-select', label: EN_FLAG + ' → ' + EN_FLAG, icon: 'A → A', accessibleLabel: '英語の説明から英単語を選ぶ' },
+      { id: 'jpn-eng', label: '日本語→英単語', icon: '<img class="mode-image" src="./sys/mode-jp-en.png" alt="" />', accessibleLabel: '日本語から英単語を選ぶ' },
+      { id: 'eng-select', label: '英語(文)→英単語', icon: '<img class="mode-image" src="./sys/mode-en-en.png" alt="" />', accessibleLabel: '英文から英単語を選ぶ' },
       { id: 'eng-type', label: '英単語を入力', hint: '英文の空欄を埋める', icon: '<i class="fa-regular fa-keyboard"></i>', accessibleLabel: '英文の空欄に英単語を入力する' },
       { id: 'oni', label: '鬼モード', hint: '3つの出題形式をシャッフル', icon: '鬼', accessibleLabel: '鬼モード、3つの出題形式を混ぜて出題する' }
     ],
@@ -499,7 +500,7 @@
       : shuffledRows.map(() => mode);
     const questions = shuffledRows.map((item, index) => {
       const questionMode = questionModes[index];
-      const distractors = shuffleArray(
+      const distractors = questionMode === 'eng-type' ? [] : shuffleArray(
         rows.filter(r => r.word.toLowerCase() !== item.word.toLowerCase())
       ).slice(0, 3);
 
@@ -690,7 +691,6 @@
     openQuizScreen();
     currentSession.selectedChoice = selectedChoice;
     currentSession.typedText = typedText || '';
-    syncSlideAvailability();
     const input = document.getElementById('type-native-input');
     if (input) input.value = currentSession.typedText;
     document.querySelectorAll('.choice-btn').forEach(button => {
@@ -708,6 +708,11 @@
     sheet.style.transform = 'translateY(0px)';
     closeCheckSheet();
     renderCurrentQuestion();
+    if (!appState.pauseHintSeen) {
+      showToast('上のバーを下にスワイプすると一時停止');
+      appState.pauseHintSeen = true;
+      saveState();
+    }
   }
 
   function closeQuizScreen() {
@@ -767,10 +772,9 @@
 
   document.addEventListener('touchmove', e => {
     if (e.touches && e.touches.length > 1) {
-      if (e.cancelable) e.preventDefault();
       return;
     }
-    const scrollEl = e.target.closest('.units-scroll, .quiz-content, .unit-mode-dialog, .check-sheet');
+    const scrollEl = e.target.closest('.units-scroll, .quiz-content, .unit-mode-dialog, .check-sheet, .results-screen');
     if (!scrollEl) {
       // Touched navigation bar (.bottom-footer), header (.app-header), Mypage, modals, etc. -> block page scroll
       if (e.cancelable) e.preventDefault();
@@ -814,10 +818,10 @@
 
   function renderCurrentQuestion() {
     if (!currentSession) return;
+    cancelChoicePress?.();
     startQuestionClock();
     updateProgressBar();
     closeCheckSheet();
-    resetSlideThumb();
 
     const q = currentSession.questions[currentSession.currentIndex];
     currentSession.selectedChoice = null;
@@ -825,11 +829,8 @@
     currentSession.answeredCurrent = false;
 
     const contentEl = document.getElementById('quiz-content');
-    syncSlideAvailability();
-    const slideWrap = document.getElementById('slide-next-wrap');
 
     if (q.kind === 'vocx-eng-type') {
-      slideWrap.style.display = 'none';
       const raw = q.rawItem;
       const sentenceText = buildBlankedSentence(
         raw.sentence,
@@ -897,7 +898,6 @@
         }
       }, 60);
     } else {
-      slideWrap.style.display = 'flex';
 
       let promptClass = 'quiz-prompt-jpn';
       let choicesClass = 'choices-stack-4';
@@ -936,25 +936,51 @@
         </div>
       `;
 
-      contentEl.querySelectorAll('.choice-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (currentSession.answeredCurrent) return;
-          const idx = Number(btn.dataset.choiceIndex);
-          currentSession.selectedChoice = idx;
-          syncSlideAvailability();
-          contentEl.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-
-          // Only reveal the answer immediately if the user explicitly enabled "スライドをスキップ".
-          // By default (skipSlide = false), the user must slide "Slide to Next" to approve.
-          if (appState.settings.skipSlide) {
-            confirmChoiceAnswer();
-          } else {
-            playSound('tap');
-          }
-        });
-      });
+      contentEl.querySelectorAll('.choice-btn').forEach((button, index) => bindChoiceButton(button, index));
     }
+  }
+
+  function bindChoiceButton(button, index) {
+    let press = null;
+    const inside = event => {
+      const r = button.getBoundingClientRect();
+      return event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+    };
+    const cancel = () => {
+      const id = press?.id;
+      press = null;
+      if (cancelChoicePress === cancel) cancelChoicePress = null;
+      button.classList.remove('is-pressed');
+      if (id != null && button.hasPointerCapture(id)) button.releasePointerCapture(id);
+    };
+    const submit = () => {
+      if (!currentSession || currentSession.answeredCurrent) return;
+      currentSession.selectedChoice = index;
+      button.classList.add('selected');
+      confirmChoiceAnswer();
+    };
+    button.addEventListener('pointerdown', event => {
+      if (!event.isPrimary || event.button !== 0 || currentSession?.answeredCurrent) return;
+      cancelChoicePress?.();
+      cancelChoicePress = cancel;
+      press = { id: event.pointerId, cancelled: false };
+      button.setPointerCapture(event.pointerId);
+      button.classList.add('is-pressed');
+    });
+    button.addEventListener('pointermove', event => {
+      if (press?.id !== event.pointerId) return;
+      if (!inside(event)) press.cancelled = true;
+      button.classList.toggle('is-pressed', inside(event));
+    });
+    button.addEventListener('pointerup', event => {
+      if (press?.id !== event.pointerId) return;
+      const valid = !press.cancelled && inside(event);
+      cancel();
+      if (valid) submit();
+    });
+    button.addEventListener('pointercancel', cancel);
+    button.addEventListener('lostpointercapture', cancel);
+    button.addEventListener('click', event => { if (event.detail === 0) submit(); });
   }
 
   function escapeHtml(str) {
@@ -969,13 +995,14 @@
     if (!currentSession || currentSession.answeredCurrent) return;
     if (currentSession.selectedChoice === null) return;
 
+    recordAnswerTime();
     currentSession.answeredCurrent = true;
     stopStudyClock();
-    syncSlideAvailability();
     const q = currentSession.questions[currentSession.currentIndex];
     const isCorrect = currentSession.selectedChoice === q.answerIndex;
     document.querySelectorAll('.choice-btn').forEach(button => {
       const index = Number(button.dataset.choiceIndex);
+      button.classList.toggle('selected', index === currentSession.selectedChoice);
       if (index === currentSession.selectedChoice) button.dataset.result = isCorrect ? 'correct' : 'wrong';
       button.disabled = true;
     });
@@ -991,6 +1018,7 @@
     } else {
       playSound('wrong');
     }
+    if (!isCorrect) (currentSession.mistakes ||= []).push({ word: q.wordDisplay, meaning: q.subDisplay });
     openCheckSheet(isCorrect, q.wordDisplay, q.subDisplay);
   }
 
@@ -1008,6 +1036,7 @@
       inputEl.blur();
     }
 
+    recordAnswerTime();
     currentSession.answeredCurrent = true;
     stopStudyClock();
     const isCorrect = q.acceptedAnswers.includes(typed);
@@ -1019,6 +1048,7 @@
     } else {
       playSound('wrong');
     }
+    if (!isCorrect) (currentSession.mistakes ||= []).push({ word: q.wordDisplay, meaning: q.subDisplay });
     openCheckSheet(isCorrect, q.wordDisplay, q.subDisplay);
   }
 
@@ -1058,8 +1088,41 @@
     }
   }
 
+  function recordAnswerTime() {
+    stopStudyClock();
+    currentSession.totalTimeMs = (currentSession.totalTimeMs || 0) + (currentSession.questionTimeMs || 0);
+  }
+
+  function showQuizResults() {
+    stopStudyClock();
+    closeCheckSheet();
+    const { correctCount, questions, mistakes = [], totalTimeMs = 0 } = currentSession;
+    document.getElementById('screen-quiz').classList.remove('active');
+    document.getElementById('screen-results').classList.add('active');
+    const perfect = questions.length > 0 && correctCount === questions.length;
+    document.getElementById('results-title').textContent = perfect ? '全問正解！おめでとう！' : '学習おつかれさま！';
+    document.getElementById('results-score').textContent = correctCount + ' / ' + questions.length + ' 問正解';
+    document.getElementById('results-percent').textContent = Math.round(correctCount / Math.max(1, questions.length) * 100) + '%';
+    document.getElementById('results-time').textContent = '解答時間 ' + formatStudyTime(totalTimeMs);
+    document.getElementById('results-mistakes').innerHTML = mistakes.length
+      ? '<h2>間違えた問題</h2><ul>' + mistakes.map(item => '<li><strong>' + escapeHtml(item.word) + '</strong><span>' + escapeHtml(item.meaning) + '</span></li>').join('') + '</ul>'
+      : '<p>すべての問題に正解しました！</p>';
+    const resultScreen = document.getElementById('screen-results');
+    resultScreen.scrollTop = 0;
+    document.getElementById('results-title').focus({ preventScroll: true });
+    updateResultsScrollHint();
+  }
+
+  function updateResultsScrollHint() {
+    const screen = document.getElementById('screen-results');
+    document.getElementById('results-hint-down').hidden = !screen.classList.contains('active')
+      || screen.scrollHeight - screen.clientHeight - screen.scrollTop <= 2;
+  }
+
   function finishQuizSession() {
     if (!currentSession) return;
+    if (currentSession.finished) return;
+    currentSession.finished = true;
     playSound('complete');
     const { face, unitId, mode, correctCount, questions } = currentSession;
     const scorePct = Math.round((correctCount / Math.max(1, questions.length)) * 100);
@@ -1077,91 +1140,14 @@
     progMap[unitId] = existing;
 
     saveState();
-    closeQuizScreen();
+    showQuizResults();
   }
 
   /* =========================================================================
-   * 8. SLIDE TO NEXT GESTURE & SLIDE DOWN TO PAUSE GESTURE
+   * 8. SLIDE DOWN TO PAUSE GESTURE
    * ========================================================================= */
-  const slideWrap = document.getElementById('slide-next-wrap');
-  const slideThumb = document.getElementById('slide-next-thumb');
-  let slideDragging = false;
-  let slideStartX = 0;
-  let slideCurrentX = 0;
-  let slideSoundPlayed = false;
-
-  function getMaxSlideX() {
-    const wrapWidth = (slideWrap && slideWrap.clientWidth) ? slideWrap.clientWidth : 220;
-    const thumbWidth = (slideThumb && slideThumb.offsetWidth) ? slideThumb.offsetWidth : 60;
-    return Math.max(0, wrapWidth - thumbWidth + 2);
-  }
-
-  function syncSlideAvailability() {
-    const enabled = !!currentSession && currentSession.selectedChoice != null && !currentSession.answeredCurrent;
-    slideWrap.classList.toggle('is-disabled', !enabled);
-    slideWrap.classList.toggle('is-submitted', !!currentSession?.answeredCurrent);
-    slideWrap.setAttribute('aria-disabled', String(!enabled));
-    slideThumb.disabled = !enabled;
-    slideThumb.setAttribute('aria-label', enabled ? 'Slide to answer' : 'Select an answer');
-    document.getElementById('slide-next-label').textContent = enabled ? 'Slide to Next' : 'Select an answer';
-  }
-
-  function resetSlideThumb() {
-    slideDragging = false;
-    slideCurrentX = 0;
-    slideSoundPlayed = false;
-    slideThumb.classList.remove('dragging');
-    slideWrap.classList.remove('is-sliding', 'is-submitted');
-    slideThumb.style.transform = 'translateX(0px)';
-  }
-
-  slideThumb.addEventListener('pointerdown', e => {
-    if (!currentSession || currentSession.answeredCurrent) return;
-    if (currentSession.selectedChoice === null) {
-      return;
-    }
-    slideDragging = true;
-    slideSoundPlayed = false;
-    slideStartX = e.clientX - slideCurrentX;
-    slideThumb.classList.add('dragging');
-    slideThumb.setPointerCapture(e.pointerId);
-  });
-
-  slideThumb.addEventListener('pointermove', e => {
-    if (!slideDragging) return;
-    const maxSlideX = getMaxSlideX();
-    slideCurrentX = Math.max(0, Math.min(maxSlideX, e.clientX - slideStartX));
-    slideWrap.classList.toggle('is-sliding', slideCurrentX > 3);
-    if (!slideSoundPlayed && slideCurrentX > 14) {
-      slideSoundPlayed = true;
-      playSound('slide');
-    }
-    slideThumb.style.transform = `translateX(${slideCurrentX}px)`;
-  });
-
-  function endSlideDrag() {
-    if (!slideDragging) return;
-    slideDragging = false;
-    slideThumb.classList.remove('dragging');
-    const maxSlideX = getMaxSlideX();
-    if (slideCurrentX >= maxSlideX * 0.62) {
-      slideThumb.style.transform = `translateX(${maxSlideX}px)`;
-      confirmChoiceAnswer();
-    } else {
-      resetSlideThumb();
-    }
-  }
-
-  slideThumb.addEventListener('pointerup', endSlideDrag);
-  slideThumb.addEventListener('pointercancel', resetSlideThumb);
-  slideThumb.addEventListener('keydown', event => {
-    if (!slideThumb.disabled && (event.key === 'Enter' || event.key === ' ')) {
-      event.preventDefault();
-      confirmChoiceAnswer();
-    }
-  });
-
   /* Slide Down Quiz Sheet to Pause & Save Progress */
+  document.getElementById('quiz-content').addEventListener('scroll', () => cancelChoicePress?.(), { passive: true });
   const quizSheet = document.getElementById('quiz-sheet');
   let sheetDragging = false;
   let sheetStartY = 0;
@@ -1169,7 +1155,7 @@
 
   quizSheet.addEventListener('pointerdown', e => {
     if (!currentSession) return;
-    if (e.target.closest('button, input, .slide-next-wrap, .type-input-box')) return;
+    if (e.target.closest('button, input, .type-input-box')) return;
     sheetDragging = true;
     sheetStartY = e.clientY;
     sheetDeltaY = 0;
@@ -1183,33 +1169,34 @@
     quizSheet.style.transform = `translateY(${sheetDeltaY}px)`;
   });
 
+  function pauseQuizSession() {
+    if (!currentSession || currentSession.finished) return;
+    cancelChoicePress?.();
+    stopStudyClock();
+    const input = document.getElementById('type-native-input');
+    if (input) { currentSession.typedText = input.value; input.blur(); }
+    const { face, unitId } = currentSession;
+    const map = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+    const entry = map[unitId] ||= { clearedModes: {}, bestScorePct: 0, pausedSession: null };
+    entry.pausedSession = structuredClone(currentSession);
+    saveState();
+    playSound('slide');
+    closeQuizScreen();
+  }
+
   function endSheetDrag() {
     if (!sheetDragging) return;
     sheetDragging = false;
     quizSheet.classList.remove('dragging');
     if (sheetDeltaY > 95 && currentSession) {
-      stopStudyClock();
-      // Slide down & save as Paused!
-      const inputEl = document.getElementById('type-native-input');
-      if (inputEl) inputEl.blur();
-      quizSheet.style.transform = 'translateY(100%)';
-      const { face, unitId } = currentSession;
-      const progMap = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
-      const existing = progMap[unitId] || { clearedModes: {}, bestScorePct: 0, pausedSession: null };
-      existing.pausedSession = structuredClone(currentSession);
-      progMap[unitId] = existing;
-      saveState();
-      playSound('slide');
-      setTimeout(() => {
-        closeQuizScreen();
-      }, 220);
+      pauseQuizSession();
     } else {
       quizSheet.style.transform = 'translateY(0px)';
     }
   }
 
   window.addEventListener('pointerup', endSheetDrag);
-  window.addEventListener('pointercancel', endSheetDrag);
+  window.addEventListener('pointercancel', () => { sheetDragging = false; quizSheet.classList.remove('dragging'); quizSheet.style.transform = 'translateY(0px)'; });
 
   /* =========================================================================
    * 9. KEYBOARD SHORTCUTS (Check Sheet / Profile Name Modal)
@@ -1298,14 +1285,11 @@
   function syncSettingsUI() {
     document.getElementById('profile-name').textContent = appState.profileName || '@Name';
     const hintBtn = document.getElementById('toggle-hint');
-    const skipBtn = document.getElementById('toggle-skip-slide');
     const soundBtn = document.getElementById('toggle-sound');
 
     hintBtn.classList.toggle('on', !!appState.settings.initialHint);
     hintBtn.setAttribute('aria-checked', String(!!appState.settings.initialHint));
 
-    skipBtn.classList.toggle('on', !!appState.settings.skipSlide);
-    skipBtn.setAttribute('aria-checked', String(!!appState.settings.skipSlide));
 
     soundBtn.classList.toggle('on', !!appState.settings.soundEffects);
     soundBtn.setAttribute('aria-checked', String(!!appState.settings.soundEffects));
@@ -1318,12 +1302,6 @@
     playSound('tap');
   });
 
-  document.getElementById('toggle-skip-slide').addEventListener('click', () => {
-    appState.settings.skipSlide = !appState.settings.skipSlide;
-    saveState();
-    syncSettingsUI();
-    playSound('tap');
-  });
 
   document.getElementById('toggle-sound').addEventListener('click', () => {
     appState.settings.soundEffects = !appState.settings.soundEffects;
@@ -1369,6 +1347,11 @@
     quitModal.classList.add('open');
   });
 
+  document.getElementById('quit-confirm-pause').addEventListener('click', () => {
+    quitModal.classList.remove('open');
+    pauseQuizSession();
+  });
+
   document.getElementById('quit-confirm-no').addEventListener('click', () => {
     playSound('tap');
     quitModal.classList.remove('open');
@@ -1387,6 +1370,20 @@
     }
     closeQuizScreen();
   });
+
+  document.getElementById('results-home').addEventListener('click', () => {
+    document.getElementById('screen-results').classList.remove('active');
+    updateResultsScrollHint();
+    closeQuizScreen();
+  });
+
+  const resultsScroller = document.getElementById('screen-results');
+  resultsScroller.addEventListener('scroll', updateResultsScrollHint, { passive: true });
+  const resultsResizeObserver = new ResizeObserver(updateResultsScrollHint);
+  [resultsScroller, document.getElementById('results-mistakes'), document.getElementById('results-home')]
+    .forEach(element => resultsResizeObserver.observe(element));
+  window.addEventListener('resize', updateResultsScrollHint);
+  document.fonts.ready.then(updateResultsScrollHint);
 
   document.getElementById('check-next-btn').addEventListener('click', advanceToNextQuestion);
 

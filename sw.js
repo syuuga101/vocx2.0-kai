@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vocx-dojo-pwa-v20';
+const CACHE_NAME = 'vocx-dojo-pwa-v29';
 
 const PRECACHE_ASSETS = [
   './',
@@ -7,6 +7,8 @@ const PRECACHE_ASSETS = [
   './app.js',
   './sys/flag-jp.svg',
   './sys/flag-gb.svg',
+  './sys/mode-jp-en.png',
+  './sys/mode-en-en.png',
   './manifest.json',
   './data.js',
   './sys/icon.svg',
@@ -29,9 +31,10 @@ for (let i = 2; i <= 27; i++) {
 }
 
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_ASSETS)).catch(() => {})
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -40,7 +43,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(keys =>
       Promise.all(
         keys.map(key => {
-          if (key !== CACHE_NAME) {
+          if (key.startsWith('vocx-dojo-pwa-') && key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -51,15 +54,28 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request)
-      .then(networkResponse => {
-        if (networkResponse && networkResponse.status === 200) {
-          const copy = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        }
-        return networkResponse;
-      })
-      .catch(() => caches.match(event.request))
-  );
+  const url = new URL(event.request.url);
+  // Versioned local images and sounds can reuse their precached copy immediately.
+  // Keep source code and lesson files network-first so local edits remain visible.
+  const cacheFirst = url.origin === self.location.origin
+    && /\.(?:svg|png|wav|ttf|otf|woff2?)$/i.test(url.pathname)
+    && !event.request.headers.has('range');
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    if (cacheFirst) {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+    }
+    try {
+      const response = await fetch(event.request);
+      if (response.status === 200) {
+        event.waitUntil(cache.put(event.request, response.clone()).catch(() => {}));
+      }
+      return response;
+    } catch (error) {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+      throw error;
+    }
+  })());
 });

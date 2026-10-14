@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -70,12 +70,6 @@
               </button>
             </div>
             <div class="setting-row">
-              <span class="setting-label">スライドをスキップ</span>
-              <button id="toggle-skip-slide" class="toggle-switch" type="button" role="switch" aria-label="スライドをスキップ" aria-checked="false">
-                <span class="toggle-thumb"></span>
-              </button>
-            </div>
-            <div class="setting-row">
               <span class="setting-label">サウンドエフェクト</span>
               <button id="toggle-sound" class="toggle-switch on" type="button" role="switch" aria-label="サウンドエフェクト" aria-checked="true">
                 <span class="toggle-thumb"></span>
@@ -129,15 +123,6 @@
           <!-- Populated dynamically per question -->
         </div>
 
-        <!-- Slide to Next Slider (shown for choice modes) -->
-        <div id="slide-next-wrap" class="slide-next-wrap is-disabled" aria-disabled="true">
-          <span id="slide-next-label" class="slide-next-label">Select an answer</span>
-          <button id="slide-next-thumb" class="slide-next-thumb" type="button" aria-label="Select an answer" disabled>
-            <svg width="15" height="13" viewBox="0 0 18 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1.25013 13.75L7.50014 7.50002L1.25013 1.25M10.0001 13.75L16.2502 7.50002L10.0001 1.25" stroke="#2C2C2C" stroke-width="2.50001" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
       </div>
 
       <!-- Check Bottom Sheet (5:799 / 5:777) -->
@@ -154,13 +139,24 @@
       </div>
     </div>
 
+    <section id="screen-results" class="screen results-screen" aria-labelledby="results-title">
+      <h1 id="results-title" tabindex="-1"></h1>
+      <div id="results-percent" class="results-percent"></div>
+      <p id="results-score"></p>
+      <p id="results-time"></p>
+      <div id="results-mistakes"></div>
+      <button id="results-home" class="check-next-btn" type="button">ホームへ戻る</button>
+    </section>
+    <div id="results-hint-down" class="units-scroll-hint results-scroll-hint" aria-hidden="true" hidden><i class="fa-solid fa-chevron-down"></i></div>
+
     <!-- ==================== QUIT CONFIRMATION MODAL (5:763 / 14:411) ==================== -->
     <div id="quit-modal" class="modal-overlay">
       <div class="quit-modal-card">
-        <div class="quit-modal-text quit-confirm-text">終了しますか？<span class="quit-modal-description">進捗状況は破棄されます</span></div>
-        <div class="quit-modal-actions">
-          <button id="quit-confirm-yes" class="quit-modal-btn" type="button">はい</button>
-          <button id="quit-confirm-no" class="quit-modal-btn" type="button">いいえ</button>
+        <div class="quit-modal-text quit-confirm-text">終了しますか？<span class="quit-modal-description">一時停止すると続きから再開できます</span></div>
+        <div class="quit-modal-actions quiz-quit-actions">
+          <button id="quit-confirm-pause" class="quit-modal-btn" type="button">一時停止して終了</button>
+          <button id="quit-confirm-yes" class="quit-modal-btn" type="button">破棄して終了</button>
+          <button id="quit-confirm-no" class="quit-modal-btn" type="button">続ける</button>
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ for(const m of js.matchAll(/getElementById\('([^']+)'\)/g)) {
 }
 assert(css.includes('width: max-content;'));
 assert.equal((css.match(/\{/g)||[]).length,(css.match(/\}/g)||[]).length);
-const context = {appState:{vocxProgress:{},dojoProgress:{}},CHECK_BADGE_SVG:'check',PAUSE_BADGE_SVG:'pause',playSound:()=>{},saveState:()=>{},closeQuizScreen:()=>{}};
+const context = {appState:{vocxProgress:{},dojoProgress:{}},CHECK_BADGE_SVG:'check',PAUSE_BADGE_SVG:'pause',playSound:()=>{},saveState:()=>{},closeQuizScreen:()=>{},showQuizResults:()=>{}};
 vm.createContext(context);
 vm.runInContext(js.slice(js.indexOf('  function getPerfectClearCount'), js.indexOf('  function renderHomeUnits')),context);
 const finishStart = js.indexOf('  function finishQuizSession');
@@ -44,4 +44,3 @@ context.appState.vocxProgress['03'].clearedModes['eng-type'] = true;
 assert.equal(context.getUnitEvaluation('vocx', '03').badge, 'check');
 context.appState.vocxProgress['04'] = {clearedModes: {oni: true}, perfectClearCount: 0};
 assert.equal(context.getUnitEvaluation('vocx', '04').status, 'nice');
-
