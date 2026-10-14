@@ -30,13 +30,24 @@ function buildPages() {
   write('app.js', releaseApp(read('app.js')));
   write('sw.js', read('sw.js').replace(/pwa-v(\d+)/, 'pwa-v$1-release').replace(/  '\.\/debug.js',\n/, ''));
   for (const file of ['ui.css', 'data.js', 'manifest.json']) fs.copyFileSync(path.join(root, file), path.join(output, file));
-  for (const folder of ['sys', 'se', 'vocx', 'dojo']) {
+  const assets = [
+    'sys/icon.svg', 'sys/icon-192.png', 'sys/icon-512.png', 'sys/apple-touch-icon.png',
+    'sys/mode-jp-en.png', 'sys/mode-en-en.png',
+    'sys/fonts/noto-sans-indic-siyaq-numbers.ttf', 'sys/fonts/Noto-Sans-Indic-Siyaq-Numbers-OFL.txt',
+    'se/button.wav', 'se/Slide.wav', 'se/correct.wav', 'se/incorrect.wav',
+    'se/countdown.wav', 'se/countdown-start.wav'
+  ];
+  for (const asset of assets) {
+    fs.mkdirSync(path.dirname(path.join(output, asset)), {recursive: true});
+    fs.copyFileSync(path.join(root, asset), path.join(output, asset));
+  }
+  for (const folder of ['vocx', 'dojo']) {
     const copy = (relative) => {
       const from = path.join(root, relative), to = path.join(output, relative);
       if (fs.statSync(from).isDirectory()) {
         fs.mkdirSync(to, {recursive: true});
         for (const file of fs.readdirSync(from)) copy(path.join(relative, file));
-      } else if (/\.(?:svg|png|wav|csv|json|ttf|txt)$/i.test(relative)) fs.copyFileSync(from, to);
+      } else if (/\.(?:csv|json)$/i.test(relative)) fs.copyFileSync(from, to);
     };
     copy(folder);
   }

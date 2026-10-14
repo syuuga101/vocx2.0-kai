@@ -377,8 +377,6 @@
     scheduleUnitScrollHints();
   }
 
-  const JP_FLAG = '<img class="mode-flag" src="./sys/flag-jp.svg" alt="日本語" />';
-  const EN_FLAG = '<img class="mode-flag" src="./sys/flag-gb.svg" alt="英語" />';
   const MODE_OPTIONS = {
     vocx: [
       { id: 'jpn-eng', label: '日本語→英単語', icon: '<img class="mode-image" src="./sys/mode-jp-en.png" alt="" />', accessibleLabel: '日本語から英単語を選ぶ' },

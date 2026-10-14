@@ -1283,8 +1283,6 @@ button:focus-visible, input:focus-visible {
 .mode-chevron { font-size: 12px; color: var(--text-muted); }
 .mode-copy { display: grid; gap: 2px; }
 .mode-name, .mode-progress { display: flex; align-items: center; gap: 10px; }
-.mode-flag { width: 30px; height: 20px; border-radius: 3px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
-.mode-progress .mode-flag { width: 21px; height: 14px; border-radius: 2px; }
 .mode-progress { font-size: 14px; line-height: 18px; color: var(--text-muted); }
 .mode-resume .mode-icon { color: var(--pink-accent); }
 .mode-option:active { background: var(--accent-soft); }

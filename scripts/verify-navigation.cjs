@@ -4,7 +4,7 @@ const elements={};
 function el(id){return elements[id] ||= {clientWidth:390,style:{setProperty(){}},classList:{add(){},remove(){}},setPointerCapture(){},hasPointerCapture(){return true},releasePointerCapture(){},listeners:{},addEventListener(type,fn){this.listeners[type]=fn},showModal(){this.open=true},close(){this.open=false}}}
 const c={document:{getElementById:el},appState:{face:'vocx',vocxProgress:{},dojoProgress:{}},dojoUnitsData:{'02':{part1:{},part2:{}}},playSound:()=>{},escapeHtml:s=>s,startVocxQuiz:(unit,mode)=>c.started={unit,mode,face:'vocx'},startDojoQuiz:(unit,mode)=>c.started={unit,mode,face:'dojo'},resumePausedSession:s=>c.resumed=s};
 vm.createContext(c);
-const start=js.indexOf('  const JP_FLAG');
+const start=js.indexOf('  const MODE_OPTIONS');
 vm.runInContext(js.slice(start,js.indexOf('  /* ===',start)),c);
 c.openUnitModes('02');assert(el('unit-mode-dialog').open);assert.equal((el('unit-mode-options').innerHTML.match(/data-mode=/g)||[]).length,4);
 assert(el('unit-mode-options').innerHTML.includes('鬼モード'));
