@@ -38,11 +38,11 @@
     <details open><summary>クイズ・回答・途中保存</summary>
       <label>出題形式<select id="debug-mode"></select></label>
       <label>問題数（0で通常の問題数）<input id="debug-questions" type="number" min="0" max="100" value="0"></label>
-      <label><input id="debug-skip-countdown" type="checkbox" checked>カウントダウンを省略</label>
+      <label><input id="debug-skip-countdown" type="checkbox">カウントダウンを省略</label>
       <button data-action="start" type="button">テスト用クイズを開始</button>
       <div class="debug-actions"><button data-action="correct" type="button">正解にする</button><button data-action="wrong" type="button">不正解にする</button><button data-action="next" type="button">次の問題</button><button data-action="pause" type="button">一時停止する</button><button data-action="resume" type="button">途中から再開</button><button data-action="home" type="button">ホームへ</button></div>
       <label>移動する問題番号<input id="debug-question" type="number" min="1" value="1"></label><button data-action="jump" type="button">問題へ移動（回答記録リセット）</button>
-      <label>現在の問題の経過秒数<input id="debug-time" type="number" min="0" value="60"></label><button data-action="time" type="button">経過時間を変更</button>
+      <label>クイズの経過秒数<input id="debug-time" type="number" min="0" value="60"></label><button data-action="time" type="button">経過時間を変更</button>
     </details>
     <details><summary>結果画面</summary><p>現在のクイズからテスト結果を作ります。クイズがない場合は上の設定で開始します。</p>
       <label>合計解答時間（秒）<input id="debug-total-time" type="number" min="0" value="120"></label>

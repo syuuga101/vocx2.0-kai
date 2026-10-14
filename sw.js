@@ -1,9 +1,10 @@
-const CACHE_NAME = 'vocx-dojo-pwa-v37';
+const CACHE_NAME = 'vocx-dojo-pwa-v48';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './ui.css',
+  './sys/fonts/noto-sans-indic-siyaq-numbers.ttf',
   './app.js',
   './debug.js',
   './sys/flag-jp.svg',

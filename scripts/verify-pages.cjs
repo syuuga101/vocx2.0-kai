@@ -8,6 +8,7 @@ assert(!html.includes('debug.js')); assert(!sw.includes('debug.js'));
 assert(!/debugSandbox|debugProgress|createDebugTools|vocx-debug/.test(js));
 new vm.Script(js); new vm.Script(sw);
 for (const match of html.matchAll(/(?:src|href)="(\.\/[^"?]+)"/g)) assert(fs.existsSync(path.join(output, match[1])), match[1]);
+for (const match of read('ui.css').matchAll(/url\(['"]?(\.\/[^'"\)]+)['"]?\)/g)) assert(fs.existsSync(path.join(output, match[1])), match[1]);
 const handlers = {};
 vm.runInNewContext(sw, {self: {addEventListener: (name, fn) => handlers[name] = fn, skipWaiting() {}}, caches: {open: async () => ({addAll: async assets => {for (const asset of assets) assert(fs.existsSync(path.join(output, asset)), asset);}})}});
 let installed;

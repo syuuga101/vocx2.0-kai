@@ -6,6 +6,8 @@ const sounds = [];
 const el = id => elements[id] ||= {hidden: true, textContent: '', style: {}, replaceChildren() {}, classList: {add() {}, remove() {}}};
 const c = {debugSandbox: null, countdownTick: 0, currentSession: {questionTimeMs: 0}, appState: {pauseHintSeen: true}, document: {getElementById: el}, stopStudyClock() {}, closeCheckSheet() {}, renderHomeUnits() {}, renderCurrentQuestion() {rendered++;}, setTimeout(fn, ms) {assert.equal(ms, 1000); const id = ++nextId; timers.set(id, fn); return id;}, clearTimeout: id => timers.delete(id) };
 vm.createContext(c);
+c.saveQuizCheckpoint = () => {};
+vm.runInContext(js.slice(js.indexOf('  function animateCountdownNumber'), js.indexOf('  function recordStudyTime')), c);
 c.playSound = type => sounds.push(type);
 vm.runInContext(js.slice(js.indexOf('  function cancelQuizCountdown'), js.indexOf('  function updateProgressBar')), c);
 function second() { const [id, fn] = timers.entries().next().value; timers.delete(id); fn(); }
@@ -17,7 +19,20 @@ second(); assert.equal(rendered, 1); assert(el('quiz-countdown').hidden); assert
 assert.deepEqual(sounds, ['countdown', 'countdown', 'countdown', 'countdownStart']);
 c.openQuizScreen(false); assert.equal(rendered, 2, 'resume opens immediately'); assert.equal(timers.size, 0);
 assert.equal(sounds.length, 4, 'resume does not play countdown sounds');
+let animations = 0;
+const animatedNumber = {animate() {animations++;}, getAnimations() {return []}};
+c.window = {matchMedia: () => ({matches: true})};
+c.animateCountdownNumber(animatedNumber); assert.equal(animations, 0, 'reduced motion disables countdown animation');
+c.window.matchMedia = () => ({matches: false});
+c.animateCountdownNumber(animatedNumber); assert.equal(animations, 1);
 c.openQuizScreen(); c.closeQuizScreen(); assert.equal(timers.size, 0, 'close cancels pending countdown');
+c.currentSession = {};
+c.debugSandbox = {skipCountdown: true};
+c.openQuizScreen(); assert.equal(timers.size, 0, 'explicit debug skip opens immediately');
+assert.equal(c.debugSandbox.skipCountdown, false, 'debug skip applies only to that start');
+c.openQuizScreen(); assert.equal(el('quiz-countdown-number').textContent, '3');
+assert.equal(timers.size, 1, 'subsequent normal start keeps countdown in debug mode');
+c.closeQuizScreen();
 console.log('OK: three-second countdown precedes rendering, excludes answer time and skips resume');
 
 const played = [];

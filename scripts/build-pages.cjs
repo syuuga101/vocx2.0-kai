@@ -36,7 +36,7 @@ function buildPages() {
       if (fs.statSync(from).isDirectory()) {
         fs.mkdirSync(to, {recursive: true});
         for (const file of fs.readdirSync(from)) copy(path.join(relative, file));
-      } else if (/\.(?:svg|png|wav|csv|json)$/i.test(relative)) fs.copyFileSync(from, to);
+      } else if (/\.(?:svg|png|wav|csv|json|ttf|txt)$/i.test(relative)) fs.copyFileSync(from, to);
     };
     copy(folder);
   }

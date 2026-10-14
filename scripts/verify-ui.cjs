@@ -7,6 +7,7 @@ new vm.Script(js);
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 assert.equal(ids.length,new Set(ids).size,'duplicate element IDs');
 for(const m of html.matchAll(/(?:src|href)="(\.\/[^"?]+)"/g)) assert(fs.existsSync(root+m[1]),m[1]);
+for(const m of css.matchAll(/url\(['"]?(\.\/[^'"\)]+)['"]?\)/g)) assert(fs.existsSync(root+m[1]),m[1]);
 for(const m of js.matchAll(/getElementById\('([^']+)'\)/g)) {
   assert(ids.includes(m[1]) || js.includes('id="'+m[1]+'"'), 'missing ID: '+m[1]);
 }

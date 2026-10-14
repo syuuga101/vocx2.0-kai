@@ -37,13 +37,27 @@
     return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
   }
 
+  function animateCountdownNumber(element) {
+    if (!element.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    element.getAnimations().forEach(animation => animation.cancel());
+    element.animate([
+      {opacity: 0, transform: 'scale(.78) translateY(10px)'},
+      {opacity: 1, transform: 'scale(1.06) translateY(0)', offset: .65},
+      {opacity: 1, transform: 'scale(1) translateY(0)'}
+    ], {duration: 360, easing: 'cubic-bezier(.22,1,.36,1)'});
+  }
+
   function recordStudyTime() {
     if (!studyClock || !currentSession) return;
     const now = performance.now();
-    currentSession.questionTimeMs = (currentSession.questionTimeMs || 0) + now - studyClock.startedAt;
+    const delta = now - studyClock.startedAt;
+    currentSession.elapsedTimeMs ??= (currentSession.totalTimeMs || 0) + (currentSession.answeredCurrent ? 0 : currentSession.questionTimeMs || 0);
+    currentSession.elapsedTimeMs += delta;
+    currentSession.totalTimeMs = currentSession.elapsedTimeMs;
+    if (!currentSession.answeredCurrent) currentSession.questionTimeMs = (currentSession.questionTimeMs || 0) + delta;
     studyClock.startedAt = now;
     const timer = document.getElementById('quiz-study-time');
-    const label = formatStudyTime(currentSession.questionTimeMs);
+    const label = formatStudyTime(currentSession.elapsedTimeMs);
     if (timer.textContent !== label) timer.textContent = label;
   }
 
@@ -687,6 +701,7 @@
     if (currentSession.answeredCurrent) {
       currentSession.currentIndex++;
       currentSession.secondLetterHint = false;
+      currentSession.meaningHint = false;
       currentSession.questionTimeMs = 0;
       if (currentSession.currentIndex >= currentSession.questions.length) {
         finishQuizSession();
@@ -705,6 +720,7 @@
     document.querySelectorAll('.choice-btn').forEach(button => {
       button.classList.toggle('selected', Number(button.dataset.choiceIndex) === selectedChoice);
     });
+    saveQuizCheckpoint();
   }
 
   /* =========================================================================
@@ -717,19 +733,21 @@
   }
 
   function openQuizScreen(withCountdown = true) {
-    if (debugSandbox?.skipCountdown) withCountdown = false;
+    if (debugSandbox?.skipCountdown) { withCountdown = false; debugSandbox.skipCountdown = false; }
     cancelQuizCountdown();
     stopStudyClock();
     document.getElementById('screen-main').classList.remove('active');
     document.getElementById('screen-quiz').classList.add('active');
     const sheet = document.getElementById('quiz-sheet');
     sheet.style.transform = 'translateY(0px)';
+    document.getElementById('screen-quiz').scrollTop = 0;
     closeCheckSheet();
     const session = currentSession;
     const begin = () => {
       if (currentSession !== session) return;
       cancelQuizCountdown();
       renderCurrentQuestion();
+      if (withCountdown) saveQuizCheckpoint();
       if (!appState.pauseHintSeen) {
         showToast('上のバーを下にスワイプすると一時停止');
         appState.pauseHintSeen = true;
@@ -748,6 +766,7 @@
     countdown.hidden = false;
     let remaining = 3;
     number.textContent = String(remaining);
+    animateCountdownNumber(number);
     const tick = () => {
       if (currentSession !== session) return;
       remaining--;
@@ -756,6 +775,7 @@
         begin();
       } else {
         number.textContent = String(remaining);
+        animateCountdownNumber(number);
         playSound('countdown');
         countdownTick = setTimeout(tick, 1000);
       }
@@ -825,7 +845,7 @@
     if (e.touches && e.touches.length > 1) {
       return;
     }
-    const scrollEl = e.target.closest('.units-scroll, .quiz-content, .unit-mode-dialog, .check-sheet, .results-screen, .debug-panel');
+    const scrollEl = e.target.closest('.units-scroll, .quiz-content, .unit-mode-dialog, .check-sheet, .results-screen, .mypage-body, .debug-panel');
     if (!scrollEl) {
       // Touched navigation bar (.bottom-footer), header (.app-header), Mypage, modals, etc. -> block page scroll
       if (e.cancelable) e.preventDefault();
@@ -880,6 +900,7 @@
     currentSession.answeredCurrent = false;
 
     const contentEl = document.getElementById('quiz-content');
+    contentEl.scrollTop = 0;
 
     if (q.kind === 'vocx-eng-type') {
       const raw = q.rawItem;
@@ -915,8 +936,34 @@
             </svg>
           </button>
         </form>
-        <button id="second-letter-hint" class="second-letter-hint" type="button">2文字目のヒント</button>
+        <div class="hint-button-wrap">
+          <button id="second-letter-hint" class="btn-54" type="button">
+            <span class="shadow" aria-hidden="true"></span><span class="depth" aria-hidden="true"></span><span id="second-letter-hint-label" class="content">2文字目のヒント</span>
+          </button>
+        </div>
+        <div class="meaning-hint-wrap">
+          <button id="meaning-hint-btn" class="btn-54" type="button" aria-controls="meaning-hint-text" aria-expanded="false">
+            <span class="shadow" aria-hidden="true"></span><span class="depth" aria-hidden="true"></span><span class="content">日本語の意味を見る</span>
+          </button>
+          <p id="meaning-hint-text" class="meaning-hint-text" role="status" hidden></p>
+        </div>
       `;
+      const meaningButton = document.getElementById('meaning-hint-btn');
+      const showMeaning = () => {
+        const text = document.getElementById('meaning-hint-text');
+        text.textContent = raw.jpn || '';
+        text.hidden = false;
+        currentSession.meaningHint = true;
+        meaningButton.setAttribute('aria-expanded', 'true');
+        meaningButton.disabled = true;
+      };
+      meaningButton.addEventListener('click', () => {
+        if (!currentSession || currentSession.answeredCurrent) return;
+        showMeaning();
+        playSound('tap');
+        saveQuizCheckpoint();
+      });
+      if (currentSession.meaningHint) showMeaning();
       const hintButton = document.getElementById('second-letter-hint');
       const showSecondLetter = () => {
         const answer = raw.inflected || raw.word;
@@ -924,14 +971,20 @@
         document.getElementById('type-hint-sentence').textContent = blanked.replace('______', answer.slice(0, 2) + '____');
         currentSession.secondLetterHint = true;
         hintButton.disabled = true;
-        hintButton.textContent = 'ヒント表示中';
+        document.getElementById('second-letter-hint-label').textContent = 'ヒント表示中';
       };
-      hintButton.addEventListener('click', showSecondLetter);
+      hintButton.addEventListener('click', () => {
+        if (!currentSession || currentSession.answeredCurrent) return;
+        showSecondLetter();
+        playSound('tap');
+        saveQuizCheckpoint();
+      });
       if (currentSession.secondLetterHint) showSecondLetter();
       const formEl = document.getElementById('type-input-form');
       const inputEl = document.getElementById('type-native-input');
       inputEl.addEventListener('input', () => {
         if (!currentSession) return;
+        inputEl.setCustomValidity('');
         currentSession.typedText = inputEl.value;
       });
       formEl.addEventListener('click', e => {
@@ -988,6 +1041,7 @@
       `;
 
       contentEl.querySelectorAll('.choice-btn').forEach((button, index) => bindChoiceButton(button, index));
+      contentEl.focus({ preventScroll: true });
     }
   }
 
@@ -1048,7 +1102,6 @@
 
     recordAnswerTime();
     currentSession.answeredCurrent = true;
-    stopStudyClock();
     const q = currentSession.questions[currentSession.currentIndex];
     const isCorrect = currentSession.selectedChoice === q.answerIndex;
     document.querySelectorAll('.choice-btn').forEach(button => {
@@ -1070,6 +1123,7 @@
       playSound('wrong');
     }
     if (!isCorrect) (currentSession.mistakes ||= []).push({ word: q.wordDisplay, meaning: q.subDisplay });
+    saveQuizCheckpoint();
     openCheckSheet(isCorrect, q.wordDisplay, q.subDisplay);
   }
 
@@ -1082,17 +1136,20 @@
       currentSession.typedText = inputEl.value;
     }
     const typed = (currentSession.typedText || '').trim().toLowerCase();
-    if (!typed) return;
+    if (!typed) {
+      if (inputEl) { inputEl.setCustomValidity('英単語を入力してください'); inputEl.reportValidity(); }
+      return;
+    }
     if (inputEl) {
       inputEl.blur();
     }
 
     recordAnswerTime();
     currentSession.answeredCurrent = true;
-    stopStudyClock();
     const isCorrect = q.acceptedAnswers.includes(typed);
     document.getElementById('type-input-form').dataset.result = isCorrect ? 'correct' : 'wrong';
     document.getElementById('second-letter-hint').disabled = true;
+    document.getElementById('meaning-hint-btn').disabled = true;
     if (isCorrect) {
       currentSession.correctCount++;
       playSound('correct');
@@ -1100,6 +1157,7 @@
       playSound('wrong');
     }
     if (!isCorrect) (currentSession.mistakes ||= []).push({ word: q.wordDisplay, meaning: q.subDisplay });
+    saveQuizCheckpoint();
     openCheckSheet(isCorrect, q.wordDisplay, q.subDisplay);
   }
 
@@ -1116,32 +1174,58 @@
     subEl.textContent = subText;
 
     document.getElementById('check-backdrop').classList.add('open');
+    document.getElementById('quiz-content').inert = true;
+    sheet.inert = false;
+    sheet.setAttribute('aria-hidden', 'false');
+    document.getElementById('check-next-btn').disabled = false;
     sheet.classList.add('open');
+    document.getElementById('check-next-btn').focus({ preventScroll: true });
   }
 
   function closeCheckSheet() {
     document.getElementById('check-backdrop').classList.remove('open');
-    document.getElementById('check-sheet').classList.remove('open');
+    const sheet = document.getElementById('check-sheet');
+    sheet.classList.remove('open');
+    sheet.inert = true;
+    sheet.setAttribute('aria-hidden', 'true');
+    document.getElementById('check-next-btn').disabled = true;
+    document.getElementById('quiz-content').inert = false;
   }
 
   function advanceToNextQuestion() {
-    if (!currentSession) return;
+    if (!currentSession || !currentSession.answeredCurrent || currentSession.finished) return;
     playSound('tap');
     closeCheckSheet();
 
     if (currentSession.currentIndex + 1 < currentSession.questions.length) {
       currentSession.currentIndex++;
       currentSession.secondLetterHint = false;
+      currentSession.meaningHint = false;
       currentSession.questionTimeMs = 0;
       renderCurrentQuestion();
+      saveQuizCheckpoint();
     } else {
       finishQuizSession();
     }
   }
 
   function recordAnswerTime() {
-    stopStudyClock();
-    currentSession.totalTimeMs = (currentSession.totalTimeMs || 0) + (currentSession.questionTimeMs || 0);
+    recordStudyTime();
+    currentSession.elapsedTimeMs ??= (currentSession.totalTimeMs || 0) + (currentSession.questionTimeMs || 0);
+    currentSession.totalTimeMs = currentSession.elapsedTimeMs;
+  }
+
+  function getResultFeedback(percent, perfect = percent === 100) {
+    const levels = [
+      {level: 'danger', color: '#ff4040', messages: ['今回はかなり苦戦！復習で立て直そう', 'ここから巻き返そう！まずは意味の確認から', '覚え直しのチャンス！一語ずつ攻略しよう', 'まだ伸びしろたっぷり！焦らず復習しよう', '今回は難しかったね。次は一問ずつ増やそう']},
+      {level: 'warning', color: '#ff9650', messages: ['まだ要復習！覚えた単語を増やしていこう', '少しずつつかめてきた！もう一度挑戦', 'ここが踏ん張りどころ！間違いを見直そう', '土台づくりはこれから！繰り返せば伸びる', '正解できた単語もある！次は半分を目指そう']},
+      {level: 'steady', color: '#ffd34d', messages: ['いい勝負！復習でもう一段上へ', '半分以上つかめた！苦手を減らそう', 'あとひと押し！間違えた問題が次の得点源', '着実に前進中！もう一度で伸ばせそう', '理解が育ってきた！次は高得点を狙おう']},
+      {level: 'good', color: '#b5e36a', messages: ['かなり好調！全問正解まであと少し', 'よくできた！残りの苦手を仕上げよう', '実力がついてきた！次は満点を狙おう', 'いい仕上がり！最後の取りこぼしをなくそう', 'ここまで来た！間違いを確認して完成へ']},
+      {level: 'perfect', color: '#58e3a1', messages: ['全問正解！おめでとう！', '全問正解！完璧な仕上がり！', '全問正解！しっかり身についているね', '全問正解！見事な集中力！', '全問正解！この調子で次のユニットへ！']}
+    ];
+    const index = perfect ? 4 : percent < 25 ? 0 : percent < 50 ? 1 : percent < 75 ? 2 : 3;
+    const feedback = levels[index];
+    return {level: feedback.level, color: feedback.color, message: feedback.messages[Math.floor(Math.random() * feedback.messages.length)]};
   }
 
   function showQuizResults() {
@@ -1151,13 +1235,18 @@
     document.getElementById('screen-quiz').classList.remove('active');
     document.getElementById('screen-results').classList.add('active');
     const perfect = questions.length > 0 && correctCount === questions.length;
-    document.getElementById('results-title').textContent = perfect ? '全問正解！おめでとう！' : '学習おつかれさま！';
+    const percent = Math.round(correctCount / Math.max(1, questions.length) * 100);
+    const feedback = getResultFeedback(percent, perfect);
+    document.getElementById('screen-results').dataset.perfect = String(perfect);
+    document.getElementById('screen-results').dataset.scoreLevel = feedback.level;
+    document.getElementById('results-title').textContent = feedback.message;
     document.getElementById('results-score').textContent = correctCount + ' / ' + questions.length + ' 問正解';
-    document.getElementById('results-percent').textContent = Math.round(correctCount / Math.max(1, questions.length) * 100) + '%';
+    document.getElementById('results-percent').textContent = percent + '%';
+    document.getElementById('results-percent').style.color = feedback.color;
     document.getElementById('results-time').textContent = '解答時間 ' + formatStudyTime(totalTimeMs);
     document.getElementById('results-mistakes').innerHTML = mistakes.length
       ? '<h2>間違えた問題</h2><ul>' + mistakes.map(item => '<li><strong>' + escapeHtml(item.word) + '</strong><span>' + escapeHtml(item.meaning) + '</span></li>').join('') + '</ul>'
-      : '<p>すべての問題に正解しました！</p>';
+      : perfect ? '<p>すべての問題に正解しました！</p>' : '<p>未回答または記録のない問題があります。</p>';
     const resultScreen = document.getElementById('screen-results');
     resultScreen.scrollTop = 0;
     document.getElementById('results-title').focus({ preventScroll: true });
@@ -1220,6 +1309,15 @@
     quizSheet.style.transform = `translateY(${sheetDeltaY}px)`;
   });
 
+  function saveQuizCheckpoint() {
+    if (!currentSession || currentSession.finished) return;
+    const { face, unitId } = currentSession;
+    const map = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
+    const entry = map[unitId] ||= { clearedModes: {}, bestScorePct: 0, pausedSession: null };
+    entry.pausedSession = structuredClone(currentSession);
+    saveState();
+  }
+
   function pauseQuizSession() {
     if (!currentSession || currentSession.finished) return;
     cancelChoicePress?.();
@@ -1227,11 +1325,7 @@
     stopStudyClock();
     const input = document.getElementById('type-native-input');
     if (input) { currentSession.typedText = input.value; input.blur(); }
-    const { face, unitId } = currentSession;
-    const map = face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
-    const entry = map[unitId] ||= { clearedModes: {}, bestScorePct: 0, pausedSession: null };
-    entry.pausedSession = structuredClone(currentSession);
-    saveState();
+    saveQuizCheckpoint();
     playSound('slide');
     closeQuizScreen();
   }
@@ -1255,6 +1349,7 @@
    * ========================================================================= */
   window.addEventListener('keydown', e => {
     if (document.querySelector('.debug-panel[open]')) return;
+    if (e.repeat) return;
     if (document.getElementById('name-modal').classList.contains('open')) {
       if (e.key === 'Enter') saveProfileName();
       return;
@@ -1370,14 +1465,16 @@
   function openNameModal() {
     playSound('tap');
     nameInput.value = appState.profileName || '@Name';
+    nameInput.setCustomValidity('');
     nameModal.classList.add('open');
     setTimeout(() => nameInput.focus(), 50);
   }
 
   function saveProfileName() {
     const val = nameInput.value.trim();
+    if (!val) { nameInput.setCustomValidity('名前を入力してください'); nameInput.reportValidity(); return; }
     if (val) {
-      appState.profileName = val.startsWith('@') ? val : `@${val}`;
+      appState.profileName = Array.from(val.startsWith('@') ? val : `@${val}`).slice(0, 20).join('');
       saveState();
       syncSettingsUI();
     }
@@ -1386,6 +1483,7 @@
   }
 
   document.getElementById('profile-edit-btn').addEventListener('click', openNameModal);
+  nameInput.addEventListener('input', () => nameInput.setCustomValidity(''));
   document.getElementById('profile-name').addEventListener('click', openNameModal);
   document.getElementById('name-save-btn').addEventListener('click', saveProfileName);
   document.getElementById('name-cancel-btn').addEventListener('click', () => {
@@ -1505,13 +1603,15 @@
       jump(number) {
         const session = requireSession(); stopStudyClock(); cancelQuizCountdown();
         session.currentIndex = Math.max(0, Math.min(session.questions.length - 1, Math.floor(Number(number) || 1) - 1));
-        session.correctCount = 0; session.mistakes = []; session.totalTimeMs = 0;
-        session.questionTimeMs = 0; session.secondLetterHint = false;
+        session.correctCount = 0; session.mistakes = []; session.totalTimeMs = 0; session.elapsedTimeMs = 0;
+        session.questionTimeMs = 0; session.secondLetterHint = false; session.meaningHint = false;
         renderCurrentQuestion();
       },
       time(seconds) {
         const session = requireSession();
         session.questionTimeMs = Math.max(0, Number(seconds) || 0) * 1000;
+        session.elapsedTimeMs = session.questionTimeMs;
+        session.totalTimeMs = session.elapsedTimeMs;
         if (studyClock) studyClock.startedAt = performance.now();
         document.getElementById('quiz-study-time').textContent = formatStudyTime(session.questionTimeMs);
       },
@@ -1520,6 +1620,7 @@
         session.correctCount = Math.round(session.questions.length * Math.max(0, Math.min(1, ratio)));
         session.mistakes = session.questions.slice(session.correctCount).map(q => ({word: q.wordDisplay, meaning: q.subDisplay}));
         session.totalTimeMs = Math.max(0, Number(seconds) || 0) * 1000;
+        session.elapsedTimeMs = session.totalTimeMs;
         session.answeredCurrent = true;
         finishQuizSession();
       },
@@ -1555,7 +1656,7 @@
   /* Initialize */
   window.addEventListener('vocx-debug-connect', event => {
     if (location.hash !== '#debug' && new URLSearchParams(location.search).get('debug') !== '1') return;
-    if (!debugSandbox) debugSandbox = { original: structuredClone(appState), skipCountdown: true };
+    if (!debugSandbox) debugSandbox = { original: structuredClone(appState), skipCountdown: false };
     event.detail.connect(createDebugTools());
   });
   window.addEventListener('vocx-debug-preview', event => {

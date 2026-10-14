@@ -1,3 +1,13 @@
+/* Limit the English face to letters; Japanese, digits and UI symbols retain their font. */
+@font-face {
+  font-family: 'Noto Sans Indic Siyaq Numbers English';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./sys/fonts/noto-sans-indic-siyaq-numbers.ttf') format('truetype');
+  unicode-range: U+0041-005A, U+0061-007A, U+00C0-024F;
+}
+
 :root {
   --bg-page: #11232c;
   --bg-dark: #192e38;
@@ -63,14 +73,14 @@ body {
   height: var(--app-height, 100dvh);
   overflow: hidden;
   background-color: var(--bg-page);
-  font-family: 'Sawarabi Gothic', sans-serif;
+  font-family: 'Noto Sans Indic Siyaq Numbers English', 'Sawarabi Gothic', sans-serif;
   display: flex;
   align-items: stretch;
   justify-content: center;
   overscroll-behavior: none;
 }
 
-button, input, select, textarea { font-family: 'Sawarabi Gothic', sans-serif; }
+button, input, select, textarea { font-family: 'Noto Sans Indic Siyaq Numbers English', 'Sawarabi Gothic', sans-serif; }
 
 /* WebKit top fixed container edge strip to suppress iOS 26/27 status bar blur pocket */
 .ios-blur-fix {
@@ -371,15 +381,18 @@ button, input, select, textarea { font-family: 'Sawarabi Gothic', sans-serif; }
   padding-top: 18px;
   padding-left: 18px;
   padding-right: 18px;
-  padding-bottom: calc(96px + var(--safe-bottom));
+  padding-bottom: 24px;
+  margin-bottom: calc(88px + var(--safe-bottom));
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow: hidden;
-  touch-action: none;
+  min-height: 0;
+  overflow-y: auto;
+  touch-action: pan-y pinch-zoom;
 }
 
 .mypage-card {
+  flex-shrink: 0;
   width: 100%;
   max-width: 332px;
   min-height: 292px;
@@ -436,6 +449,12 @@ button, input, select, textarea { font-family: 'Sawarabi Gothic', sans-serif; }
 }
 
 .profile-name {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-size: 17px;
   font-weight: 700;
   color: var(--text-cream);
@@ -453,7 +472,7 @@ button, input, select, textarea { font-family: 'Sawarabi Gothic', sans-serif; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 26px;
+  min-height: 44px;
   gap: 12px;
 }
 
@@ -546,8 +565,10 @@ button:focus-visible, input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }
@@ -934,8 +955,6 @@ button:focus-visible, input:focus-visible {
 }
 
 .type-native-input:focus-visible { outline: none; box-shadow: none; }
-.second-letter-hint { margin-top: 16px; padding: 8px 16px; border: 1px solid var(--border-grey); border-radius: 20px; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; }
-.second-letter-hint:disabled { opacity: .6; cursor: default; }
 .quiz-unit-meta { display: grid; justify-items: center; gap: 4px; }
 .quiz-study-time { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .choice-btn.selected[data-result="correct"], .type-input-box[data-result="correct"] { border-color: var(--green-fill); box-shadow: 0 4px 0 var(--green-shadow); background-color: #203d35; }
@@ -1001,6 +1020,14 @@ button:focus-visible, input:focus-visible {
 .check-sheet.open {
   transform: translateY(0);
 }
+.check-sheet:not(.open) { visibility: hidden; pointer-events: none; }
+.name-input-help { margin-top: 8px; font-size: 14px; color: var(--text-muted); }
+
+@media (orientation: landscape) and (max-height: 480px) {
+  .choices-stack-4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+  .quiz-prompt-jpn { margin-top: 8px; }
+  .quiz-content { padding-bottom: 20px; }
+}
 
 .check-sheet {
   --result-color: var(--green-fill);
@@ -1045,7 +1072,7 @@ button:focus-visible, input:focus-visible {
 }
 
 .check-answer-sub {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-light);
   text-align: center;
@@ -1184,8 +1211,13 @@ button:focus-visible, input:focus-visible {
   transform: translateX(-50%) translateY(-8px);
   background-color: var(--bg-dark);
   color: var(--text-light);
-  font-size: 11.5px;
-  padding: 4px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  text-align: center;
+  overflow-wrap: anywhere;
+  padding: 8px 14px;
   border-radius: 20px;
   z-index: 80;
   opacity: 0;
@@ -1271,7 +1303,8 @@ button:focus-visible, input:focus-visible {
 
 .results-screen { padding: 32px 24px; overflow-y: auto; text-align: center; color: var(--text-light); }
 .results-screen.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.results-screen h1 { font-size: 24px; }
+.results-screen h1 { width: 100%; max-width: 520px; font-size: 24px; line-height: 1.5; overflow-wrap: anywhere; }
+.results-screen.active > * { flex-shrink: 0; max-width: 100%; }
 .results-percent { font-size: 52px; font-weight: 900; color: var(--green-fill); }
 #results-mistakes { width: 100%; max-width: 420px; text-align: left; }
 #results-mistakes h2 { font-size: 18px; }
@@ -1286,6 +1319,9 @@ button:focus-visible, input:focus-visible {
 .type-input-box { min-height: 56px; }
 .quiz-quit-actions { flex-direction: column; gap: 12px; }
 .quiz-quit-actions .quit-modal-btn { width: 100%; max-width: none; min-height: 44px; flex: none; font-size: 15px; }
+.quiz-quit-actions .quit-modal-btn { transition: transform 0.2s, box-shadow 0.2s; }
+.quiz-quit-actions .quit-modal-btn:not(:disabled):hover { transform: translateY(4%); box-shadow: 0 1.5px 0 var(--border-grey); }
+.quiz-quit-actions .quit-modal-btn:not(:disabled):active { transform: translateY(8%); box-shadow: 0 0 0 var(--border-grey); }
 
 .quiz-countdown { position: absolute; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-page); color: var(--text-light); }
 .quiz-countdown[hidden] { display: none; }
@@ -1293,3 +1329,82 @@ button:focus-visible, input:focus-visible {
 .quiz-countdown-label { font-size: 18px; font-weight: 700; }
 .quiz-countdown-number { font-size: 96px; line-height: 1.2; font-weight: 900; color: var(--pink-accent); font-variant-numeric: tabular-nums; }
 .quiz-preparing .quiz-topbar, .quiz-preparing .quiz-sheet { visibility: hidden; }
+
+.hint-button-wrap, .meaning-hint-wrap { width: 100%; max-width: 232px; margin-top: 16px; flex-shrink: 0; }
+.meaning-hint-text { margin-top: 16px; font-size: 16px; line-height: 1.5; color: var(--text-light); text-align: center; overflow-wrap: anywhere; }
+.btn-54,
+.btn-54 *,
+.btn-54 :after,
+.btn-54 :before,
+.btn-54:after,
+.btn-54:before { border: 0 solid; box-sizing: border-box; }
+.btn-54 {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: button;
+  background-color: #000;
+  background-image: none;
+  color: #fff;
+  cursor: pointer;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  font-size: 100%; line-height: 1.5; margin: 0;
+  -webkit-mask-image: -webkit-radial-gradient(#000, #fff);
+  padding: 0;
+}
+.btn-54:disabled { cursor: default; }
+.btn-54:-moz-focusring { outline: auto; }
+.btn-54 svg { display: block; vertical-align: middle; }
+.btn-54 [hidden] { display: none; }
+.btn-54 { box-sizing: border-box; display: block; width: 100%; height: 48px; font-family: inherit; font-size: 14px; font-weight: 700; padding: 0; position: relative; text-transform: none; background: none; }
+.btn-54 .content, .btn-54 .depth, .btn-54 .shadow { transition: transform 0.2s; }
+.btn-54 .content { background: var(--surface-btn); color: var(--text-light); border: 1px solid var(--border-grey); border-radius: 8px 8px 2px 2px; display: grid; height: 84%; left: 0; place-items: center; position: absolute; top: 0; width: 100%; }
+.btn-54 .depth { background: #405865; height: 10%; top: 84%; }
+.btn-54 .depth, .btn-54 .shadow { display: block; left: 0; position: absolute; width: 100%; }
+.btn-54 .shadow { background: #0b1820; border-radius: 0 0 8px 8px; height: 6%; top: 94%; }
+.btn-54:not(:disabled):hover .content { transform: translateY(4%); }
+.btn-54:not(:disabled):hover .shadow { transform: translateY(-20%); }
+.btn-54:not(:disabled):active .content { transform: translateY(8%); }
+.btn-54:not(:disabled):active .shadow { transform: translateY(-30%); }
+.btn-54:disabled .content { color: var(--text-muted); }
+
+/* Short, interaction-led motion. Choice hit areas remain stationary. */
+:root { --motion-ease: cubic-bezier(.22, 1, .36, 1); }
+@keyframes viewAppear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes contentRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes iconNudge { 0% { transform: scale(.88); } 65% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes hintNudge { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 3px); } }
+@keyframes perfectCelebrate { 0% { transform: scale(.9); opacity: .4; } 55% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.screen.active, #tab-home, #tab-mypage { animation: viewAppear .24s var(--motion-ease); }
+.face-tabs { position: relative; isolation: isolate; }
+.face-tabs::before { content: ''; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 12px) / 2); border-radius: 20px; background: var(--pink-accent); box-shadow: 0 3px 0 var(--pink-shadow); transition: transform .3s var(--motion-ease), background-color .3s ease, box-shadow .3s ease; z-index: -1; }
+:root[data-face="dojo"] .face-tabs::before { transform: translateX(calc(100% + 4px)); }
+.face-tab[aria-pressed="true"] { background: transparent; box-shadow: none; }
+.face-tab { transition: color .2s ease; }
+.unit-row { animation: viewAppear .25s ease both; }
+.unit-row:nth-child(3) { animation-delay: .025s; }
+.unit-row:nth-child(4) { animation-delay: .05s; }
+.unit-row:nth-child(5) { animation-delay: .075s; }
+.unit-circle-main { transition: transform .2s var(--motion-ease), background-color .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.unit-row:active .unit-circle-main { transform: translateY(3px); }
+@media (hover: hover) { .mode-option:hover .mode-chevron { transform: translateX(3px); } }
+.mode-chevron { transition: transform .2s var(--motion-ease); }
+.unit-mode-dialog[open] .mode-icon { animation: contentRise .3s var(--motion-ease) both; }
+.unit-mode-dialog[open] .mode-option:nth-child(2) .mode-icon { animation-delay: .04s; }
+.unit-mode-dialog[open] .mode-option:nth-child(3) .mode-icon { animation-delay: .08s; }
+.unit-mode-dialog[open] .mode-option:nth-child(4) .mode-icon { animation-delay: .12s; }
+.nav-btn { transition: opacity .2s ease, color .2s ease, transform .2s var(--motion-ease); }
+.nav-btn:active { transform: translateY(2px); }
+.nav-btn[aria-current="page"] i { animation: iconNudge .3s var(--motion-ease); }
+.quiz-prompt-jpn, .quiz-prompt-eng-select, .quiz-prompt-dojo-stack, .quiz-prompt-type-wrap { animation: contentRise .24s var(--motion-ease); }
+.choice-btn { animation: viewAppear .2s ease both; }
+.choice-btn:nth-child(2) { animation-delay: .03s; }
+.choice-btn:nth-child(3) { animation-delay: .06s; }
+.choice-btn:nth-child(4) { animation-delay: .09s; }
+.meaning-hint-text:not([hidden]), .answer-meaning { animation: contentRise .22s var(--motion-ease); }
+.toggle-thumb { transition: transform .28s cubic-bezier(.22,1.3,.36,1); }
+.type-submit-btn { transition: transform .18s var(--motion-ease), background-color .2s ease; }
+.units-scroll-hint:not([hidden]) { animation: hintNudge .7s ease-in-out 3; }
+.results-screen.active > h1, .results-screen.active > p, .results-screen.active > .results-percent, .results-screen.active > button { animation: contentRise .32s var(--motion-ease) both; }
+.results-screen.active #results-score { animation-delay: .05s; }
+.results-screen.active #results-time { animation-delay: .1s; }
+.results-screen.active #results-mistakes li { animation: viewAppear .3s ease both; }
+.results-screen.active[data-perfect="true"] .results-percent { animation: perfectCelebrate .6s var(--motion-ease); }

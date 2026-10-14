@@ -63,18 +63,18 @@
           </div>
 
           <div class="settings-list">
-            <div class="setting-row">
+            <label class="setting-row" for="toggle-hint">
               <span class="setting-label">頭文字ヒント</span>
               <button id="toggle-hint" class="toggle-switch on" type="button" role="switch" aria-label="頭文字ヒント" aria-checked="true">
                 <span class="toggle-thumb"></span>
               </button>
-            </div>
-            <div class="setting-row">
+            </label>
+            <label class="setting-row" for="toggle-sound">
               <span class="setting-label">サウンドエフェクト</span>
               <button id="toggle-sound" class="toggle-switch on" type="button" role="switch" aria-label="サウンドエフェクト" aria-checked="true">
                 <span class="toggle-thumb"></span>
               </button>
-            </div>
+            </label>
           </div>
         </div>
       </main>
@@ -115,7 +115,7 @@
           <div id="quiz-progress-thumb" class="quiz-progress-thumb"></div>
         </div>
 
-        <div class="quiz-unit-meta"><div id="quiz-unit-num" class="quiz-unit-num">01</div><div id="quiz-study-time" class="quiz-study-time" aria-label="この問題の経過時間">00:00</div></div>
+        <div class="quiz-unit-meta"><div id="quiz-unit-num" class="quiz-unit-num">01</div><div id="quiz-study-time" class="quiz-study-time" aria-label="クイズの経過時間">00:00</div></div>
       </div>
 
       <!-- Main Quiz Dark Sheet (Slide down to pause & save) -->
@@ -124,7 +124,7 @@
           <div class="quiz-pause-pill"></div>
         </div>
 
-        <div id="quiz-content" class="quiz-content">
+        <div id="quiz-content" class="quiz-content" tabindex="-1" role="region" aria-label="問題">
           <!-- Populated dynamically per question -->
         </div>
 
@@ -132,7 +132,7 @@
 
       <!-- Check Bottom Sheet (5:799 / 5:777) -->
       <div id="check-backdrop" class="check-backdrop"></div>
-      <div id="check-sheet" class="check-sheet">
+      <div id="check-sheet" class="check-sheet" inert aria-hidden="true">
         <svg class="check-result-symbol" viewBox="0 0 100 100" aria-hidden="true">
           <circle class="result-circle" cx="50" cy="50" r="36" />
           <path class="result-cross" d="M25 25L75 75M75 25L25 75" />
@@ -140,7 +140,7 @@
         <div id="check-status-title" class="check-status-title" role="status" aria-live="polite"></div>
         <div id="check-answer-word" class="check-answer-word">Agreement</div>
         <div id="check-answer-sub" class="check-answer-sub">合意・契約</div>
-        <button id="check-next-btn" class="check-next-btn" type="button">進む</button>
+        <button id="check-next-btn" class="check-next-btn" type="button" disabled>進む</button>
       </div>
     </div>
 
@@ -171,7 +171,8 @@
       <div class="quit-modal-card" style="min-height: 230px; padding-top: 36px;">
         <div class="quit-modal-text" style="font-size: 20px;">ユーザー名を変更</div>
         <div style="padding: 0 20px;">
-          <input id="name-input-field" class="name-input-field" type="text" maxlength="20" placeholder="@Name" />
+          <input id="name-input-field" class="name-input-field" type="text" maxlength="20" placeholder="@Name" aria-describedby="name-input-help" />
+          <p id="name-input-help" class="name-input-help">名前は20文字以内で入力してください</p>
         </div>
         <div class="quit-modal-actions">
           <button id="name-save-btn" class="quit-modal-btn" type="button">保存</button>

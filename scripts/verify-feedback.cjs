@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const s=fs.readFileSync('./app.js','utf8').replace(/\r\n/g,'\n'),els={};
-const c={document:{getElementById:id=>els[id]||(els[id]={dataset:{},classList:{add(){},toggle(){}}})}};
+const c={document:{getElementById:id=>els[id]||(els[id]={dataset:{},setAttribute(){},focus(){},classList:{add(){},toggle(){}}})}};
 vm.createContext(c);
 const start=s.indexOf('  function openCheckSheet');
 vm.runInContext(s.slice(start,s.indexOf('  function closeCheckSheet',start)),c);
