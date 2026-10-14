@@ -26,6 +26,34 @@
   let vocxUnitsData = Object.assign({}, window.VOCX_FALLBACK_DATA || {});
   let dojoUnitsData = Object.assign({}, window.DOJO_FALLBACK_DATA || {});
   let currentSession = null;
+  let studyClock = null;
+  let studyTick = 0;
+
+  function formatStudyTime(ms) {
+    const seconds = Math.floor(ms / 1000);
+    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  }
+
+  function recordStudyTime() {
+    if (!studyClock || !currentSession) return;
+    const now = performance.now();
+    currentSession.questionTimeMs = (currentSession.questionTimeMs || 0) + now - studyClock.startedAt;
+    studyClock.startedAt = now;
+    document.getElementById('quiz-study-time').textContent = formatStudyTime(currentSession.questionTimeMs);
+  }
+
+  function startQuestionClock() {
+    stopStudyClock();
+    studyClock = { startedAt: performance.now() };
+    recordStudyTime();
+    studyTick = setInterval(recordStudyTime, 250);
+  }
+
+  function stopStudyClock() {
+    recordStudyTime();
+    clearInterval(studyTick);
+    studyClock = null;
+  }
 
   function loadState() {
     try {
@@ -348,7 +376,7 @@
     const progress = appState.face === 'vocx' ? appState.vocxProgress : appState.dojoProgress;
     const paused = progress[unitId]?.pausedSession;
     document.getElementById('unit-mode-title').textContent = 'UNIT ' + unitId;
-    document.getElementById('unit-mode-description').textContent = 'Practice';
+    document.getElementById('unit-mode-description').textContent = 'モードを選択';
     const available = MODE_OPTIONS[appState.face].filter(mode => appState.face === 'vocx' || dojoUnitsData[unitId]?.[mode.id]);
     const resumeLabel = MODE_OPTIONS[appState.face].find(mode => mode.id === paused?.mode)?.label || 'Practice';
     const chevron = '<i class="fa-solid fa-chevron-right mode-chevron" aria-hidden="true"></i>';
@@ -648,6 +676,8 @@
     currentSession = structuredClone(savedSession);
     if (currentSession.answeredCurrent) {
       currentSession.currentIndex++;
+      currentSession.secondLetterHint = false;
+      currentSession.questionTimeMs = 0;
       if (currentSession.currentIndex >= currentSession.questions.length) {
         finishQuizSession();
         return;
@@ -681,6 +711,7 @@
   }
 
   function closeQuizScreen() {
+    stopStudyClock();
     closeCheckSheet();
     document.getElementById('screen-quiz').classList.remove('active');
     document.getElementById('screen-main').classList.add('active');
@@ -783,6 +814,7 @@
 
   function renderCurrentQuestion() {
     if (!currentSession) return;
+    startQuestionClock();
     updateProgressBar();
     closeCheckSheet();
     resetSlideThumb();
@@ -808,7 +840,7 @@
       const safeDef = sanitizeDefinitionForType(q.defText || raw.def, raw.word, raw.inflected);
       contentEl.innerHTML = `
         <div class="quiz-prompt-type-wrap">
-          <div class="quiz-prompt-type-sentence">${escapeHtml(sentenceText)}</div>
+          <div id="type-hint-sentence" class="quiz-prompt-type-sentence">${escapeHtml(sentenceText)}</div>
           <div class="quiz-prompt-type-def">${escapeHtml(safeDef)}</div>
         </div>
         <form id="type-input-form" class="type-input-box" autocomplete="off">
@@ -831,7 +863,19 @@
             </svg>
           </button>
         </form>
+        <button id="second-letter-hint" class="second-letter-hint" type="button">2文字目のヒント</button>
       `;
+      const hintButton = document.getElementById('second-letter-hint');
+      const showSecondLetter = () => {
+        const answer = raw.inflected || raw.word;
+        const blanked = buildBlankedSentence(raw.sentence, raw.word, raw.inflected, false);
+        document.getElementById('type-hint-sentence').textContent = blanked.replace('______', answer.slice(0, 2) + '____');
+        currentSession.secondLetterHint = true;
+        hintButton.disabled = true;
+        hintButton.textContent = 'ヒント表示中';
+      };
+      hintButton.addEventListener('click', showSecondLetter);
+      if (currentSession.secondLetterHint) showSecondLetter();
       const formEl = document.getElementById('type-input-form');
       const inputEl = document.getElementById('type-native-input');
       inputEl.addEventListener('input', () => {
@@ -926,9 +970,21 @@
     if (currentSession.selectedChoice === null) return;
 
     currentSession.answeredCurrent = true;
+    stopStudyClock();
     syncSlideAvailability();
     const q = currentSession.questions[currentSession.currentIndex];
     const isCorrect = currentSession.selectedChoice === q.answerIndex;
+    document.querySelectorAll('.choice-btn').forEach(button => {
+      const index = Number(button.dataset.choiceIndex);
+      if (index === currentSession.selectedChoice) button.dataset.result = isCorrect ? 'correct' : 'wrong';
+      button.disabled = true;
+    });
+    if (q.rawItem?.jpn) {
+      const meaning = document.createElement('div');
+      meaning.className = 'answer-meaning';
+      meaning.textContent = q.wordDisplay + '：' + q.rawItem.jpn;
+      document.getElementById('quiz-content').appendChild(meaning);
+    }
     if (isCorrect) {
       currentSession.correctCount++;
       playSound('correct');
@@ -953,7 +1009,10 @@
     }
 
     currentSession.answeredCurrent = true;
+    stopStudyClock();
     const isCorrect = q.acceptedAnswers.includes(typed);
+    document.getElementById('type-input-form').dataset.result = isCorrect ? 'correct' : 'wrong';
+    document.getElementById('second-letter-hint').disabled = true;
     if (isCorrect) {
       currentSession.correctCount++;
       playSound('correct');
@@ -991,6 +1050,8 @@
 
     if (currentSession.currentIndex + 1 < currentSession.questions.length) {
       currentSession.currentIndex++;
+      currentSession.secondLetterHint = false;
+      currentSession.questionTimeMs = 0;
       renderCurrentQuestion();
     } else {
       finishQuizSession();
@@ -1127,6 +1188,7 @@
     sheetDragging = false;
     quizSheet.classList.remove('dragging');
     if (sheetDeltaY > 95 && currentSession) {
+      stopStudyClock();
       // Slide down & save as Paused!
       const inputEl = document.getElementById('type-native-input');
       if (inputEl) inputEl.blur();

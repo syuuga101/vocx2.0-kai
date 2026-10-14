@@ -116,7 +116,7 @@
           <div id="quiz-progress-thumb" class="quiz-progress-thumb"></div>
         </div>
 
-        <div id="quiz-unit-num" class="quiz-unit-num">01</div>
+        <div class="quiz-unit-meta"><div id="quiz-unit-num" class="quiz-unit-num">01</div><div id="quiz-study-time" class="quiz-study-time" aria-label="この問題の経過時間">00:00</div></div>
       </div>
 
       <!-- Main Quiz Dark Sheet (Slide down to pause & save) -->
@@ -157,7 +157,7 @@
     <!-- ==================== QUIT CONFIRMATION MODAL (5:763 / 14:411) ==================== -->
     <div id="quit-modal" class="modal-overlay">
       <div class="quit-modal-card">
-        <div class="quit-modal-text">終了しますか？<br/>進捗状況は破棄されます。</div>
+        <div class="quit-modal-text quit-confirm-text">終了しますか？<span class="quit-modal-description">進捗状況は破棄されます</span></div>
         <div class="quit-modal-actions">
           <button id="quit-confirm-yes" class="quit-modal-btn" type="button">はい</button>
           <button id="quit-confirm-no" class="quit-modal-btn" type="button">いいえ</button>
@@ -186,7 +186,7 @@
       <h2 id="unit-mode-title">Unit</h2>
       <button id="unit-mode-close" class="mode-close" type="button" aria-label="Close">×</button>
     </div>
-    <p id="unit-mode-description">Practice</p>
+    <p id="unit-mode-description">モードを選択</p>
     <div id="unit-mode-options" class="mode-options"></div>
   </dialog>
 
