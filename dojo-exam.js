@@ -3,6 +3,9 @@
   'use strict';
   const DURATION = 11 * 60 * 1000;
   const VERSION = 1;
+  // These pairs can both fit the same blank; never put both in the shared answer bank.
+  const similarWords=[['outcome','result'],['magnificent','terrific'],['pile','stack']];
+  const conflicts=(a,b)=>similarWords.some(pair=>pair.includes(normalize(a)) && pair.includes(normalize(b)));
   const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const normalize = value => String(value ?? '').normalize('NFKC').trim().toLowerCase().replace(/[’‘]/g,"'");
   function shuffle(items, random = Math.random) {
@@ -39,6 +42,10 @@
     }
     return pool;
   }
+  function questionVariants(question) {
+    const additional=window.DOJO_EXAMPLE_DATA?.[String(question.unit)]?.[question.word] || [];
+    return [question,...additional.map(sentence=>({...question,sentence,answer:question.word.toLowerCase(),source:'practice'}))];
+  }
   function listRanges(data) {
     return Array.from({length:11}, (_,i) => {
       const start = 19 + i;
@@ -53,10 +60,25 @@
     // Use both units in both sections, never two unrelated or partially loaded units.
     const groups = [start,start+1].map(unit=>shuffle(questionPool(start,data).filter(q=>q.unit===unit),random));
     if (groups.some(group=>group.length<8)) throw new Error('各Unitに8語以上の出題可能な例文が必要です');
-    const selected = shuffle(groups.flatMap(group=>group.splice(0,4)),random);
-    const typed = shuffle([...groups[0].splice(0,4),...groups[1].splice(0,3)],random);
+    const pickVariant=q=>{const variants=questionVariants(q);return variants[Math.floor(random()*variants.length)];};
+    const selectedWords=[];
+    for(const group of groups){
+      let count=0;
+      for(let index=0;index<group.length && count<4;){
+        if(selectedWords.some(q=>conflicts(q.word,group[index].word))){index++;continue;}
+        selectedWords.push(group.splice(index,1)[0]);count++;
+      }
+      if(count!==4)throw new Error('選択問題の候補が不足しています');
+    }
+    const selected = shuffle(selectedWords,random).map(pickVariant);
+    const typed = shuffle([...groups[0].splice(0,4),...groups[1].splice(0,3)],random).map(pickVariant);
     const used = new Set([...selected,...typed].map(q=>normalize(q.word)));
-    const distractors = shuffle(questionPool(start,data).filter(q=>!used.has(normalize(q.word))),random).slice(0,4);
+    const distractors=[];
+    for(const q of shuffle(questionPool(start,data).filter(q=>!used.has(normalize(q.word))),random)){
+      if([...selected,...distractors].some(other=>conflicts(other.word,q.word)))continue;
+      distractors.push(q);if(distractors.length===4)break;
+    }
+    if(distractors.length!==4)throw new Error('選択肢の候補が不足しています');
     const bank = shuffle([...selected,...distractors].map(q=>q.answer),random);
     return {version:VERSION,id:range.id,start,end:start+1,status:'in-progress',remainingMs:DURATION,
       questions:[...selected.map(q=>({...q,type:'select'})),...typed.map(q=>({...q,type:'type'}))],
@@ -74,7 +96,8 @@
       ['in-progress','completed'].includes(exam.status) && Number.isFinite(exam.remainingMs) && exam.remainingMs>=0 && exam.remainingMs<=DURATION;
   }
   function bookData(data) {
-    return Object.fromEntries(listRanges(data).filter(range=>range.ready).map(range=>[range.id,{entries:questionPool(range.start,data).map(q=>({word:q.word,meaning:q.meaning,definition:q.definition,sentence:(data[String(q.unit)] || []).find(item=>item.word===q.word)?.sentence || ''}))}]));
+    const filled=v=>v.sentence.replace('_____',v.word==='DNA'?'DNA':v.sentence.startsWith('_____')?v.answer[0].toUpperCase()+v.answer.slice(1):v.answer);
+    return Object.fromEntries(listRanges(data).filter(range=>range.ready).map(range=>[range.id,{entries:questionPool(range.start,data).map(q=>({word:q.word,meaning:q.meaning,definition:q.definition,sentence:(data[String(q.unit)] || []).find(item=>item.word===q.word)?.sentence || '',examples:questionVariants(q).map(filled)}))}]));
   }
 
   function create({root,getData,getProgress,saveProgress,onOpen,onClose,onCountdown=()=>{},now=Date.now}) {
@@ -103,13 +126,13 @@
     }
     function renderLauncher(panel) {
       launcher=panel;
-      panel.innerHTML='<div class="dojo-range-heading"><span class="dojo-eyebrow">4000 EEW3</span><h2>Test practice</h2><p>選択 8問 · 入力 7問 · 11分</p></div><div class="dojo-ranges">'+listRanges(getData()).map(range=>{
+      panel.innerHTML='<div class="dojo-range-heading"><span class="dojo-eyebrow">4000 EEW3</span><h2>Test practice</h2><p>選択 8問 · 入力 7問 · 11分<br>1語につき5問から抽選</p></div><div class="dojo-ranges">'+listRanges(getData()).map(range=>{
         const progress=getProgress()[range.id] || {},saved=progress.exam;
         const resume=validSaved(saved,range.id) && saved.status==='in-progress';
         const review=validSaved(saved,range.id) && saved.status==='completed';
         const level=Math.min(2,progress.perfectClearCount||0);
         return '<article class="dojo-range" data-level="'+level+'"><div><h3>Unit '+range.start+'–'+range.end+'</h3><p>'+(range.ready?(review?'前回 '+grade(saved).score+' / 15':resume?'途中保存あり · '+saved.answers.filter(a=>normalize(a)).length+' / 15':'15 questions'):'教材未追加: Unit '+range.missing.join('・'))+'</p></div><div class="dojo-range-actions"><button type="button" data-exam-start="'+range.start+'" '+(!range.ready?'disabled':'')+' aria-label="Unit '+range.start+'–'+range.end+'を開始">'+(!range.ready?'準備中':'開始')+'</button>'+(review?'<button type="button" class="exam-review-link" data-exam-review="'+range.start+'">復習</button>':'')+'</div></article>';
-      }).join('')+'</div><p class="dojo-source-note">登録済みの単語・例文から作成した練習問題です。Unit 28〜30は教材追加後に利用できます。</p>';
+      }).join('')+'</div><p class="dojo-source-note">教材の例文と追加の練習用例文から出題します。実際の試験問題ではありません。Unit 28〜30は教材追加後に利用できます。</p>';
     }
     function questionHtml(question,index) {
       const number=index<8?index+1:index-7;
@@ -284,5 +307,5 @@
     window.addEventListener('pagehide',()=>{if(exam?.status==='in-progress' && ['running','exit'].includes(phase))persist();});
     return {renderLauncher,launch,close};
   }
-  window.DojoExam={DURATION,listRanges,questionPool,buildExam,grade,validSaved,bookData,create};
+  window.DojoExam={DURATION,listRanges,questionPool,questionVariants,buildExam,grade,validSaved,bookData,create};
 })();

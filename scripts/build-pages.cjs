@@ -29,7 +29,7 @@ function buildPages() {
   write('index.html', read('index.html').replace(/  <!-- Development only:[^\n]*\n/, '').replace(/  <script src="\.\/debug.js"><\/script>\n/, ''));
   write('app.js', releaseApp(read('app.js')));
   write('sw.js', read('sw.js').replace(/pwa-v(\d+)/, 'pwa-v$1-release').replace(/  '\.\/debug.js',\n/, ''));
-  for (const file of ['ui.css', 'data.js', 'tango.js', 'dojo-exam.js', 'manifest.json']) fs.copyFileSync(path.join(root, file), path.join(output, file));
+  for (const file of ['ui.css', 'data.js', 'study-plan.js', 'tango.js', 'dojo-exam.js', 'manifest.json']) fs.copyFileSync(path.join(root, file), path.join(output, file));
   const assets = [
     'sys/icon.svg', 'sys/icon-192.png', 'sys/icon-512.png', 'sys/apple-touch-icon.png',
     'sys/mode-jp-en.png', 'sys/mode-en-en.png',

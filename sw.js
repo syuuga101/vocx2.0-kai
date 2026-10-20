@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vocx-dojo-pwa-v54';
+const CACHE_NAME = 'vocx-dojo-pwa-v55';
 
 const PRECACHE_ASSETS = [
   './',
@@ -7,6 +7,7 @@ const PRECACHE_ASSETS = [
   './sys/fonts/noto-sans-indic-siyaq-numbers.ttf',
   './app.js',
   './tango.js',
+  './study-plan.js',
   './dojo-exam.js',
   './debug.js',
   './sys/mode-jp-en.png',

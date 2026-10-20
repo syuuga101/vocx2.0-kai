@@ -15,12 +15,14 @@ for(const range of ranges){
     assert.equal(exam.questions.length,15);assert.equal(exam.questions.filter(q=>q.type==='select').length,8);assert.equal(exam.questions.filter(q=>q.type==='type').length,7);
     assert.equal(new Set(exam.questions.map(q=>q.word.toLowerCase())).size,15);
     assert.equal(new Set(exam.bank).size,12);assert.equal(exam.bank.length,12);
+    for(const pair of [['outcome','result'],['magnificent','terrific'],['pile','stack']])assert(!pair.every(word=>exam.bank.includes(word)),'confusable synonyms must not share a bank');
     assert(exam.questions.slice(0,8).every(q=>exam.bank.includes(q.answer)));
     assert(exam.questions.slice(8).every(q=>!exam.bank.includes(q.answer)),'typed answers should not be exposed by the bank');
     for(const q of exam.questions){
       assert(q.unit===range.start||q.unit===range.end);assert.equal((q.sentence.match(/_____/g)||[]).length,1);
       const row=data[String(q.unit)].find(row=>row.word===q.word);assert(row);
-      assert.equal(q.sentence.replace('_____',q.answer).toLowerCase(),row.sentence.toLowerCase());
+      const base=api.questionPool(range.start,data).find(item=>item.word===q.word);
+      assert(api.questionVariants(base).some(v=>v.sentence===q.sentence && v.answer===q.answer));
     }
     assert.equal(new Set(exam.questions.slice(0,8).map(q=>q.unit)).size,2);
     assert.equal(new Set(exam.questions.slice(8).map(q=>q.unit)).size,2);

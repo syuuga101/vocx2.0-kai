@@ -393,7 +393,7 @@
     }
     if (isTango) {
       if (!tangoBook) tangoBook = window.TangoBook.create(tangoPanel, {
-        getVocxData: () => vocxUnitsData, getDojoData: () => window.DojoExam.bookData(vocxUnitsData)
+        getVocxData: () => vocxUnitsData, getDojoData: () => window.DojoExam.bookData(vocxUnitsData), getUpcoming: () => window.StudyPlan.upcoming()
       });
       tangoBook.render();
       scheduleUnitScrollHints();
