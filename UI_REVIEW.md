@@ -2,6 +2,8 @@
 
 ## Dojo exam rework
 
+Follow-up visual alignment: the exam now follows the supplied LMS screenshot directly: grey material/exit toolbar, blue/grey desktop material sidebar, plain single-line English section headings, compact numbered dropdown rows with `>` markers, a short dashed separator and thin rectangular text fields with grey save buttons. Decorative row separators and green primary buttons were removed. Mobile retains the same neutral forms with 44px control heights and places answers below sentences; the sidebar is hidden. The release was inspected at 1366×900, 320×568, 390×844 and 390×430, including text saving and a 2/15 graded result. Footer bounds matched viewport height, no horizontal overflow was found, and browser warnings/errors were empty. All 18 scripts and the release build pass.
+
 The new primary Dojo flow uses an 11-minute paper with eight dropdown blanks and seven spelling blanks. The screenshot informs the white paper, sentence numbering, native dropdowns and individual save buttons; personal/course identifiers were not copied. Questions are generated from the existing unit examples, not unseen actual exam questions. Unit 19–20 through 26–27 are available; the final three pairs are disabled because Units 28–30 are absent.
 
 Real browser checks covered 320×568, 390×844, 1280×900 and a reduced 390×430 input viewport. No horizontal overflow or footer clipping was found. The desktop layout puts dropdowns beside sentences; mobile places controls underneath. Input text uses 16px and focus remains visible. The debug-free release was checked separately and had eight selects, seven inputs, no debug panel and no runtime warnings/errors.
