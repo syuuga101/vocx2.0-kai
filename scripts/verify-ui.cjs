@@ -26,6 +26,7 @@ for(const face of ['vocx','dojo']) {
     assert.equal(context.getUnitEvaluation(face,'02').status,count===2?'marvelous':count===1?'perfect':'nice');
   }
 }
+context.appState.face='vocx';
 context.unitsScroller={clientHeight:600,scrollTop:0,getBoundingClientRect:()=>({top:100,bottom:700})};
 context.mainScreen={getBoundingClientRect:()=>({top:0})};
 context.bottomFooter={getBoundingClientRect:()=>({top:640})};

@@ -18,7 +18,8 @@
     // Unit progress per face:
     // vocxProgress[unitId] = { clearedModes: { 'jpn-eng': bool, 'eng-select': bool, 'eng-type': bool }, bestScorePct: number, perfectClearCount: number, pausedSession: null | {...} }
     vocxProgress: {},
-    dojoProgress: {}
+    dojoProgress: {},
+    dojoExamProgress: {}
   };
 
   let appState = loadState();
@@ -26,6 +27,7 @@
   let dojoUnitsData = Object.assign({}, window.DOJO_FALLBACK_DATA || {});
   let currentSession = null;
   let tangoBook = null;
+  let dojoExam = null;
   let debugProgress = null;
   let debugSandbox = null;
   let cancelChoicePress = null;
@@ -116,11 +118,12 @@
   }
 
   function saveState() {
-    if (debugSandbox) return;
+    if (debugSandbox) return true;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      return true;
     } catch (e) {
-      // Ignore quota errors
+      return false;
     }
   }
 
@@ -377,12 +380,20 @@
     document.getElementById('face-dojo-btn').setAttribute('aria-pressed', String(appState.face === 'dojo'));
     document.getElementById('face-tango-btn').setAttribute('aria-pressed', String(appState.face === 'tango'));
     const isTango = appState.face === 'tango';
-    listEl.hidden = isTango;
+    const isDojo = appState.face === 'dojo';
+    listEl.hidden = isTango || isDojo;
+    const dojoPanel = document.getElementById('dojo-panel');
+    dojoPanel.hidden = !isDojo;
     const tangoPanel = document.getElementById('tango-panel');
     tangoPanel.hidden = !isTango;
+    if (isDojo) {
+      getDojoExam().renderLauncher(dojoPanel);
+      scheduleUnitScrollHints();
+      return;
+    }
     if (isTango) {
       if (!tangoBook) tangoBook = window.TangoBook.create(tangoPanel, {
-        getVocxData: () => vocxUnitsData, getDojoData: () => dojoUnitsData
+        getVocxData: () => vocxUnitsData, getDojoData: () => window.DojoExam.bookData(vocxUnitsData)
       });
       tangoBook.render();
       scheduleUnitScrollHints();
@@ -416,6 +427,24 @@
     listEl.innerHTML = `<div class="timeline-line"></div>${rowsHtml}`;
 
     scheduleUnitScrollHints();
+  }
+
+  function getDojoExam() {
+    if (!dojoExam) dojoExam = window.DojoExam.create({
+      root: document.getElementById('screen-dojo-exam'),
+      getData: () => vocxUnitsData,
+      getProgress: () => {
+        if (debugSandbox) return debugSandbox.dojoExamProgress ||= {};
+        return appState.dojoExamProgress ||= {};
+      },
+      saveProgress: saveState,
+      onOpen: () => document.getElementById('screen-main').classList.remove('active'),
+      onClose: () => {
+        document.getElementById('screen-main').classList.add('active');
+        renderHomeUnits();
+      }
+    });
+    return dojoExam;
   }
 
   const MODE_OPTIONS = {
@@ -1410,6 +1439,12 @@
   document.getElementById('face-vocx-btn').addEventListener('click', () => switchFace('vocx'));
   document.getElementById('face-dojo-btn').addEventListener('click', () => switchFace('dojo'));
   document.getElementById('face-tango-btn').addEventListener('click', () => switchFace('tango'));
+  document.getElementById('dojo-panel').addEventListener('click', event => {
+    const start = event.target.closest('[data-exam-start]');
+    const review = event.target.closest('[data-exam-review]');
+    if (start && !start.disabled) getDojoExam().launch(Number(start.dataset.examStart));
+    else if (review) getDojoExam().launch(Number(review.dataset.examReview), true);
+  });
 
   const unitsScroller = document.getElementById('tab-home');
   const unitsList = document.getElementById('units-list');
@@ -1426,7 +1461,7 @@
   const unitHintUp = document.getElementById('units-hint-up');
   const unitHintDown = document.getElementById('units-hint-down');
   function updateUnitScrollHints() {
-    const visible = unitsScroller.clientHeight > 0 && appState.face !== 'tango';
+    const visible = unitsScroller.clientHeight > 0 && appState.face === 'vocx';
     const viewport = mainScreen.getBoundingClientRect();
     const area = unitsScroller.getBoundingClientRect();
     const footer = bottomFooter.getBoundingClientRect();

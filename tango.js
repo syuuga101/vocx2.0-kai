@@ -8,6 +8,7 @@
         definition: item.def || '', sentence: item.sentence || ''
       }));
     }
+    if (Array.isArray(dojo[unitId]?.entries)) return dojo[unitId].entries;
     const entries = [];
     const seen = new Set();
     for (const part of Object.values(dojo[unitId] || {})) {
@@ -53,7 +54,7 @@
       </div>`;
       if (unitId === null) {
         const data = source === 'vocx' ? getVocxData() : getDojoData();
-        const ids = Object.keys(data).sort((a,b) => Number(a) - Number(b));
+        const ids = Object.keys(data).sort((a,b) => parseInt(a,10) - parseInt(b,10));
         panel.insertAdjacentHTML('beforeend', `<h2 class="tango-heading">単語帳</h2><div class="tango-units">${ids.map(id => {
           const count = getEntries(source, id, getVocxData(), getDojoData()).length;
           return `<button type="button" class="tango-unit" data-tango-unit="${escape(id)}"><span>Unit ${escape(id)}</span><small>${count} ${source === 'vocx' ? 'words' : 'items'}</small><span aria-hidden="true">›</span></button>`;

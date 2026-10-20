@@ -38,6 +38,7 @@
 
       <!-- Home Tab View -->
       <main id="tab-home" class="units-scroll">
+        <section id="dojo-panel" class="dojo-panel" aria-label="Dojoテスト範囲" hidden></section>
         <section id="tango-panel" class="tango-panel" aria-label="Unit別単語帳" hidden></section>
         <div id="units-list" class="units-list">
           <div class="timeline-line"></div>
@@ -146,6 +147,8 @@
       </div>
     </div>
 
+    <section id="screen-dojo-exam" class="screen dojo-exam-screen" aria-labelledby="dojo-exam-title"></section>
+
     <section id="screen-results" class="screen results-screen" aria-labelledby="results-title">
       <h1 id="results-title" tabindex="-1"></h1>
       <div id="results-percent" class="results-percent"></div>
@@ -197,6 +200,7 @@
   <!-- Pre-bundled CSV & JSON fallback data for static file:// execution -->
   <script src="./data.js"></script>
   <script src="./tango.js"></script>
+  <script src="./dojo-exam.js"></script>
   <script src="./app.js"></script>
   <!-- Development only: remove this script and its precache entry before release. -->
   <script src="./debug.js"></script>

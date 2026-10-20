@@ -1,5 +1,13 @@
 # UI / UX review — 2026-10-20
 
+## Dojo exam rework
+
+The new primary Dojo flow uses an 11-minute paper with eight dropdown blanks and seven spelling blanks. The screenshot informs the white paper, sentence numbering, native dropdowns and individual save buttons; personal/course identifiers were not copied. Questions are generated from the existing unit examples, not unseen actual exam questions. Unit 19–20 through 26–27 are available; the final three pairs are disabled because Units 28–30 are absent.
+
+Real browser checks covered 320×568, 390×844, 1280×900 and a reduced 390×430 input viewport. No horizontal overflow or footer clipping was found. The desktop layout puts dropdowns beside sentences; mobile places controls underneath. Input text uses 16px and focus remains visible. The debug-free release was checked separately and had eight selects, seven inputs, no debug panel and no runtime warnings/errors.
+
+The browser flow included choice and text entry, per-question saving, exit/reload/resume with preserved answers and order, unanswered confirmation/cancel, all 15 answers submitted, a 13/15 result with locked controls and inline correct/incorrect feedback, and automatic time-expiry grading. Tango's Dojo source now lists the same paired ranges with 40 entries each. All 18 verification scripts and the Pages build pass, including generated-paper coverage, answer-bank isolation, resume, time expiry and duplicate-grading prevention. These remain desktop responsive checks, not physical mobile or software-keyboard tests.
+
 ## Findings and fixes
 
 - The app used the physical screen height in ordinary browser mode. At a 390×844 viewport, its height became 900px and the 88px footer extended below the visible screen. The app now uses the visible browser height, observes keyboard-related viewport resizing, and preserves pinch zoom.
