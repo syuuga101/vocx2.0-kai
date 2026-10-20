@@ -32,11 +32,13 @@
         <div class="face-tabs" role="group" aria-label="学習コンテンツ">
           <button id="face-vocx-btn" class="face-tab" type="button" aria-pressed="true">Vocx</button>
           <button id="face-dojo-btn" class="face-tab" type="button" aria-pressed="false">Dojo</button>
+          <button id="face-tango-btn" class="face-tab" type="button" aria-pressed="false">Tango</button>
         </div>
       </header>
 
       <!-- Home Tab View -->
       <main id="tab-home" class="units-scroll">
+        <section id="tango-panel" class="tango-panel" aria-label="Unit別単語帳" hidden></section>
         <div id="units-list" class="units-list">
           <div class="timeline-line"></div>
           <!-- Populated dynamically -->
@@ -194,6 +196,7 @@
 
   <!-- Pre-bundled CSV & JSON fallback data for static file:// execution -->
   <script src="./data.js"></script>
+  <script src="./tango.js"></script>
   <script src="./app.js"></script>
   <!-- Development only: remove this script and its precache entry before release. -->
   <script src="./debug.js"></script>

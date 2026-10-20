@@ -8,7 +8,7 @@
   const LEGACY_STORAGE_KEY = 'vocx_dojo_app_state_v1';
 
   const defaultState = {
-    face: 'vocx',          // 'vocx' | 'dojo'
+    face: 'vocx',          // 'vocx' | 'dojo' | 'tango'
     activeTab: 'home',     // 'home' | 'mypage'
     profileName: '@Name',
     settings: {
@@ -25,6 +25,7 @@
   let vocxUnitsData = Object.assign({}, window.VOCX_FALLBACK_DATA || {});
   let dojoUnitsData = Object.assign({}, window.DOJO_FALLBACK_DATA || {});
   let currentSession = null;
+  let tangoBook = null;
   let debugProgress = null;
   let debugSandbox = null;
   let cancelChoicePress = null;
@@ -299,6 +300,33 @@
     return copy;
   }
 
+  function balanceChoicePositions(questions) {
+    // Shuffle complete position bags so counts stay within one of each other.
+    const bags = new Map();
+    for (const question of questions) {
+      if (!Array.isArray(question.choices) || question.choices.length < 2) continue;
+      const count = question.choices.length;
+      if (!Number.isInteger(question.answerIndex) || question.answerIndex < 0 || question.answerIndex >= count) continue;
+      let bag = bags.get(count);
+      if (!bag) { bag = { positions: [], previous: -1 }; bags.set(count, bag); }
+      if (!bag.positions.length) {
+        bag.positions = shuffleArray(Array.from({length: count}, (_, i) => i));
+        if (bag.positions[bag.positions.length - 1] === bag.previous) {
+          const swap = Math.floor(Math.random() * (count - 1));
+          [bag.positions[swap], bag.positions[count - 1]] = [bag.positions[count - 1], bag.positions[swap]];
+        }
+      }
+      const position = bag.positions.pop();
+      const choices = question.choices.slice();
+      const [correct] = choices.splice(question.answerIndex, 1);
+      choices.splice(position, 0, correct);
+      question.choices = choices;
+      question.answerIndex = position;
+      bag.previous = position;
+    }
+    return questions;
+  }
+
   /* =========================================================================
    * 5. HOME SCREEN & UNIT STATUS COMPUTATION
    * ========================================================================= */
@@ -347,6 +375,19 @@
     const listEl = document.getElementById('units-list');
     document.getElementById('face-vocx-btn').setAttribute('aria-pressed', String(appState.face === 'vocx'));
     document.getElementById('face-dojo-btn').setAttribute('aria-pressed', String(appState.face === 'dojo'));
+    document.getElementById('face-tango-btn').setAttribute('aria-pressed', String(appState.face === 'tango'));
+    const isTango = appState.face === 'tango';
+    listEl.hidden = isTango;
+    const tangoPanel = document.getElementById('tango-panel');
+    tangoPanel.hidden = !isTango;
+    if (isTango) {
+      if (!tangoBook) tangoBook = window.TangoBook.create(tangoPanel, {
+        getVocxData: () => vocxUnitsData, getDojoData: () => dojoUnitsData
+      });
+      tangoBook.render();
+      scheduleUnitScrollHints();
+      return;
+    }
 
     const unitIds = appState.face === 'vocx'
       ? Object.keys(vocxUnitsData).sort((a, b) => Number(a) - Number(b))
@@ -572,6 +613,7 @@
       }
     });
 
+    balanceChoicePositions(questions);
     const modeLabel = mode === 'oni' ? '鬼モード' : mode === 'jpn-eng'
       ? 'JPN-ENG'
       : mode === 'eng-select'
@@ -679,6 +721,7 @@
       }
     }
 
+    balanceChoicePositions(questions);
     showToast(part === 'part1' ? 'Dojo Part 1' : 'Dojo Part 2');
     currentSession = {
       face: 'dojo',
@@ -1374,6 +1417,7 @@
   }
   document.getElementById('face-vocx-btn').addEventListener('click', () => switchFace('vocx'));
   document.getElementById('face-dojo-btn').addEventListener('click', () => switchFace('dojo'));
+  document.getElementById('face-tango-btn').addEventListener('click', () => switchFace('tango'));
 
   const unitsScroller = document.getElementById('tab-home');
   const unitsList = document.getElementById('units-list');
@@ -1390,7 +1434,7 @@
   const unitHintUp = document.getElementById('units-hint-up');
   const unitHintDown = document.getElementById('units-hint-down');
   function updateUnitScrollHints() {
-    const visible = unitsScroller.clientHeight > 0;
+    const visible = unitsScroller.clientHeight > 0 && appState.face !== 'tango';
     const viewport = mainScreen.getBoundingClientRect();
     const area = unitsScroller.getBoundingClientRect();
     const footer = bottomFooter.getBoundingClientRect();
