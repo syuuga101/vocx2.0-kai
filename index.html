@@ -152,12 +152,12 @@
       <p id="results-score"></p>
       <p id="results-time"></p>
       <div id="results-mistakes"></div>
-      <button id="results-home" class="check-next-btn" type="button">ホームへ戻る</button>
+      <div class="results-actions"><button id="results-home" class="check-next-btn" type="button">ホームへ戻る</button></div>
     </section>
     <div id="results-hint-down" class="units-scroll-hint results-scroll-hint" aria-hidden="true" hidden><i class="fa-solid fa-chevron-down"></i></div>
 
     <!-- ==================== QUIT CONFIRMATION MODAL (5:763 / 14:411) ==================== -->
-    <div id="quit-modal" class="modal-overlay">
+    <div id="quit-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="学習を終了">
       <div class="quit-modal-card">
         <div class="quit-modal-text quit-confirm-text">終了しますか？<span class="quit-modal-description">一時停止すると続きから再開できます</span></div>
         <div class="quit-modal-actions quiz-quit-actions">
@@ -169,7 +169,7 @@
     </div>
 
     <!-- ==================== PROFILE NAME EDIT MODAL ==================== -->
-    <div id="name-modal" class="modal-overlay">
+    <div id="name-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="ユーザー名を変更">
       <div class="quit-modal-card" style="min-height: 230px; padding-top: 36px;">
         <div class="quit-modal-text" style="font-size: 20px;">ユーザー名を変更</div>
         <div style="padding: 0 20px;">

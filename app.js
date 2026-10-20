@@ -423,7 +423,7 @@
       { id: 'jpn-eng', label: '日本語→英単語', icon: '<img class="mode-image" src="./sys/mode-jp-en.png" alt="" />', accessibleLabel: '日本語から英単語を選ぶ' },
       { id: 'eng-select', label: '英語(文)→英単語', icon: '<img class="mode-image" src="./sys/mode-en-en.png" alt="" />', accessibleLabel: '英文から英単語を選ぶ' },
       { id: 'eng-type', label: '英単語を入力', hint: '英文の空欄を埋める', icon: '<i class="fa-regular fa-keyboard"></i>', accessibleLabel: '英文の空欄に英単語を入力する' },
-      { id: 'oni', label: '鬼モード', hint: '3つの出題形式をシャッフル', icon: '鬼', accessibleLabel: '鬼モード、3つの出題形式を混ぜて出題する' }
+      { id: 'oni', label: '鬼モード', hint: '出題形式をミックス', icon: '鬼', accessibleLabel: '鬼モード、3つの出題形式を混ぜて出題する' }
     ],
     dojo: [
       { id: 'part1', label: 'Part 1', icon: '01', accessibleLabel: '単語の組み合わせと選択問題' },
@@ -854,20 +854,11 @@
   /* Sync --app-height to eliminate iOS standalone black-translucent bottom gap */
   function syncViewportHeight() {
     const innerH = window.innerHeight || document.documentElement.clientHeight || 800;
-    const screenH = window.screen && window.screen.height ? window.screen.height : innerH;
-    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-    const isStandalone =
-      window.navigator.standalone === true ||
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.matchMedia('(display-mode: fullscreen)').matches;
-
-    // On iPhone PWA with apple-mobile-web-app-status-bar-style="black-translucent",
-    // WebKit shifts origin to y=0 but reports innerHeight = screen.height - statusBarHeight.
-    // Using screenH in portrait standalone fills the entire physical screen down to the bottom edge.
-    let targetH = innerH;
-    if (isPortrait && screenH > innerH && (screenH - innerH) <= 120 && (isStandalone || (screenH - innerH) <= 70)) {
-      targetH = screenH;
-    }
+    // The physical screen includes browser chrome; it is never the layout height.
+    // Follow the visible viewport when the keyboard opens, but preserve pinch zoom.
+    const visual = window.visualViewport;
+    const targetH = visual && visual.scale === 1 && visual.height > 0
+      ? Math.min(innerH, visual.height) : innerH;
     document.documentElement.style.setProperty('--app-height', `${targetH}px`);
     if (window.scrollY !== 0 || window.scrollX !== 0) {
       window.scrollTo(0, 0);
@@ -927,6 +918,7 @@
     setTimeout(syncViewportHeight, 60);
   });
   window.addEventListener('pageshow', syncViewportHeight);
+  window.visualViewport?.addEventListener('resize', syncViewportHeight);
 
   function renderCurrentQuestion() {
     if (!currentSession) return;
@@ -1579,6 +1571,38 @@
   document.fonts.ready.then(updateResultsScrollHint);
 
   document.getElementById('check-next-btn').addEventListener('click', advanceToNextQuestion);
+
+  // Keep keyboard and assistive-technology focus inside custom overlays.
+  let activeOverlay = null;
+  let overlayReturnFocus = null;
+  const overlayScreens = document.querySelectorAll('#phone-viewport > .screen');
+  function syncOverlayFocus() {
+    const next = document.querySelector('.modal-overlay.open');
+    if (next === activeOverlay) return;
+    if (next && !activeOverlay) overlayReturnFocus = document.activeElement;
+    activeOverlay = next;
+    overlayScreens.forEach(screen => { screen.inert = !!next; });
+    if (next) {
+      next.querySelector('input, button:not(:disabled)')?.focus({preventScroll: true});
+    } else {
+      if (overlayReturnFocus?.isConnected) overlayReturnFocus.focus({preventScroll: true});
+      overlayReturnFocus = null;
+    }
+  }
+  const overlayObserver = new MutationObserver(syncOverlayFocus);
+  document.querySelectorAll('.modal-overlay').forEach(overlay => overlayObserver.observe(overlay, {attributes: true, attributeFilter: ['class']}));
+  document.addEventListener('keydown', event => {
+    if (!activeOverlay) return;
+    if (event.key === 'Escape') {
+      event.preventDefault(); event.stopPropagation();
+      activeOverlay.classList.remove('open');
+    } else if (event.key === 'Tab') {
+      const focusable = [...activeOverlay.querySelectorAll('input:not(:disabled), button:not(:disabled)')].filter(element => element.getClientRects().length);
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
+  }, true);
 
   function createDebugTools() {
     const home = () => {

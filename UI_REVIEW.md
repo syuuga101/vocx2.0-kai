@@ -1,0 +1,38 @@
+# UI / UX review — 2026-10-20
+
+## Findings and fixes
+
+- The app used the physical screen height in ordinary browser mode. At a 390×844 viewport, its height became 900px and the 88px footer extended below the visible screen. The app now uses the visible browser height, observes keyboard-related viewport resizing, and preserves pinch zoom.
+- The main footer overlaid scrollable content. It now occupies its own fixed-size flex row, while lists and quiz content have explicit shrinkable scroll regions.
+- The home header had 42px of extra top spacing. This is now 20px plus the safe-area inset, leaving more usable space on short screens.
+- Unit scroll hints overlapped labels. Smaller hints are now aligned to the unused edge rather than the middle of the list.
+- Long result lists required scrolling to reach Home. The return action now stays visible with an opaque backing; the scroll hint is placed clear of that action. Result titles use balanced wrapping and scrollbars follow the dark theme.
+- Custom confirmation/profile dialogs left keyboard focus on the background. Dialog semantics, background inertness, Tab/Shift+Tab containment, Escape dismissal, and return focus are now implemented. These helpers are preserved in release builds.
+- Tango search used a 14px input font. It now uses 16px to avoid triggering the small-input zoom behavior on mobile Safari. Meaning/example controls also have visible keyboard focus.
+- The Oni subtitle wrapped a lone final character on a 320px screen. It was shortened without changing the mode.
+
+## Browser checks
+
+Verified in an actual Chromium browser, using desktop responsive viewport overrides:
+
+| Viewport / flow | Evidence |
+| --- | --- |
+| 320×568 | Home and footer within the viewport; mode sheet, both Vocx choice layouts, correct/wrong feedback, profile editor |
+| 390×844 | Tango source/unit navigation; search counts; meaning reveal; examples; settings; pause/quit confirmation; Dojo questions/results |
+| 430×932 | Release-build Tango list, all controls within width; footer bottom equals viewport height |
+| 1366×768 | Release-build centered phone layout, three tabs, unit list, footer within height |
+| 320×360 | Reduced-height typing field, submission, and answer feedback |
+
+The Vocx English-choice quiz was completed through all 20 questions using browser controls. Dojo Part 1 (four-choice then three-choice) and Part 2 (two-choice) were completed through their result screens. Correctness feedback, next-question transitions, scores, mistake lists, and return navigation were inspected. The public release build was tested separately from the development version, with debug controls absent.
+
+Tango was checked with Japanese search, empty results, meaning hiding/revealing, example expansion, and Vocx/Dojo switching. No horizontal overflow was found in the inspected Tango controls and entries. Browser runtime warning/error logs were checked.
+
+## Automated coverage
+
+All 17 `scripts/verify-*.cjs` checks pass, including the new viewport-height regression and overlay-focus/release-preservation checks. The debug-free Pages build succeeds and contains every referenced asset.
+
+## Limits
+
+These checks use desktop Chromium with responsive dimensions. Physical iPhone/Android hardware, the actual iOS software keyboard, and Safari standalone/PWA behavior were not tested. Reduced-height testing is not a substitute for a physical keyboard/device check. Pixel-perfect equivalence across browsers is not claimed.
+
+Future UI changes must follow `AGENTS.md`: real browser evidence, relevant end-to-end flows, automated regression checks, and public release verification before reporting completion.

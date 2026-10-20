@@ -1,0 +1,17 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const js=fs.readFileSync('app.js','utf8');
+const {releaseApp}=require('./build-pages.cjs');
+assert(releaseApp(js.replace(/\r\n/g,'\n')).includes('function syncOverlayFocus'), 'public build must preserve accessibility helpers');
+const screens=[{},{}], handlers={};let opened=null,observer;
+const prior={isConnected:true,focus(){c.document.activeElement=prior;}};
+const first={getClientRects:()=>[{}],focus(){c.document.activeElement=first;}};
+const last={getClientRects:()=>[{}],focus(){c.document.activeElement=last;}};
+const overlay={querySelector:()=>first,querySelectorAll:()=>[first,last],classList:{remove(){opened=null;}}};
+const c={document:{activeElement:prior,querySelector:()=>opened,querySelectorAll:selector=>selector.includes('.screen')?screens:[overlay],addEventListener:(name,fn)=>handlers[name]=fn},MutationObserver:class{constructor(fn){observer=fn;}observe(){}}};
+vm.createContext(c);
+vm.runInContext(js.slice(js.indexOf('  // Keep keyboard and assistive-technology focus'),js.indexOf('  function createDebugTools()')),c);
+opened=overlay;observer();assert(screens.every(screen=>screen.inert));assert.equal(c.document.activeElement,first);
+c.document.activeElement=last;handlers.keydown({key:'Tab',preventDefault(){}});assert.equal(c.document.activeElement,first);
+handlers.keydown({key:'Tab',shiftKey:true,preventDefault(){}});assert.equal(c.document.activeElement,last);
+handlers.keydown({key:'Escape',preventDefault(){},stopPropagation(){}});observer();assert(screens.every(screen=>!screen.inert));assert.equal(c.document.activeElement,prior);
+console.log('OK: modal focus, Tab/Shift+Tab trap, Escape, background inertness, return focus and release-build preservation');

@@ -1,0 +1,14 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const source=fs.readFileSync('app.js','utf8');
+const start=source.indexOf('  function syncViewportHeight()');
+const end=source.indexOf('  /* Prevent root',start);
+assert(start>=0&&end>start);
+let height='';
+const c={window:{innerHeight:844,screen:{height:900},scrollX:0,scrollY:0},document:{documentElement:{clientHeight:844,style:{setProperty(name,value){if(name==='--app-height')height=value;}}}}};
+vm.createContext(c);vm.runInContext(source.slice(start,end),c);
+c.syncViewportHeight();assert.equal(height,'844px','browser chrome is not part of the app');
+c.window.innerHeight=568;c.syncViewportHeight();assert.equal(height,'568px');
+c.window.innerHeight=844;c.window.visualViewport={scale:1,height:340};c.syncViewportHeight();assert.equal(height,'340px','keyboard leaves controls in visible viewport');
+c.window.visualViewport={scale:2,height:340};c.syncViewportHeight();assert.equal(height,'844px','pinch zoom does not collapse layout');
+c.window.visualViewport={scale:1,height:900};c.syncViewportHeight();assert.equal(height,'844px','visual viewport cannot extend beyond browser viewport');
+console.log('OK: browser height, short screens, keyboard resize, pinch zoom, and physical-screen regression');
