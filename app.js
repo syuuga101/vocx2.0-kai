@@ -438,6 +438,7 @@
         return appState.dojoExamProgress ||= {};
       },
       saveProgress: saveState,
+      onCountdown: count => playSound(count ? 'countdown' : 'countdownStart'),
       onOpen: () => document.getElementById('screen-main').classList.remove('active'),
       onClose: () => {
         document.getElementById('screen-main').classList.add('active');

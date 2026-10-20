@@ -34,27 +34,32 @@ const malformed=api.buildExam(20,data);malformed.bank[1]=malformed.bank[0];asser
 const empty=api.listRanges({'20':[{}],'21':[{}]});assert(!empty.find(r=>r.start===20).ready);
 const books=api.bookData(data);assert.equal(Object.keys(books).length,8);assert.equal(books['20-21'].entries.length,40);
 
-let time=10000,writes=0,open=false;const progress={},nodes={},handlers={};
+let time=10000,writes=0,open=false,storageWorks=true;const progress={},nodes={},handlers={};
 const node=selector=>nodes[selector] ||= {textContent:'',classList:{toggle(){}},focus(){},showModal(){this.open=true;},close(){this.open=false;},scrollTop:0};
-const root={innerHTML:'',classList:{add(){open=true;},remove(){open=false;}},querySelector:node,addEventListener:(name,fn)=>handlers[name]=fn};
+const root={innerHTML:'',insertAdjacentHTML(_where,html){this.innerHTML+=html;},classList:{add(){open=true;},remove(){open=false;}},querySelector:node,addEventListener:(name,fn)=>handlers[name]=fn};
 const launcher={innerHTML:'',querySelector:node};
-const options={root,getData:()=>data,getProgress:()=>progress,saveProgress:()=>{writes++;return true;},onOpen(){},onClose(){},now:()=>time};
-let view=api.create(options);view.renderLauncher(launcher);assert(launcher.innerHTML.includes('教材未追加: Unit 28'));
-view.launch(20);assert(open);assert.equal(progress['20-21'].exam.questions.length,15);
-function field(index,value,select=false){return {dataset:{examIndex:String(index)},value,matches:selector=>select?selector.startsWith('select'):selector.startsWith('input')};}
-handlers.change({target:field(0,'draft-select',true)});
-handlers.input({target:field(8,'draft-text')});time+=5000;view.close();assert(!open);
-assert.equal(progress['20-21'].exam.answers[0],'draft-select');assert.equal(progress['20-21'].exam.answers[8],'draft-text');assert.equal(progress['20-21'].exam.remainingMs,api.DURATION-5000);
-const oldOrder=progress['20-21'].exam.questions.map(q=>q.word).join(',');
-view=api.create(options);view.launch(20);assert.equal(progress['20-21'].exam.questions.map(q=>q.word).join(','),oldOrder);
-progress['20-21'].exam.questions.forEach((q,i)=>handlers[i<8?'change':'input']({target:field(i,q.answer,i<8)}));
+const options={root,getData:()=>data,getProgress:()=>progress,saveProgress:()=>{writes++;return storageWorks;},onOpen(){},onClose(){},now:()=>time};
 const click=attribute=>handlers.click({target:{closest:()=>({hasAttribute:name=>name===attribute})}});
+function flush(){const jobs=[...scheduled.entries()];scheduled.clear();jobs.forEach(([,fn])=>fn());}
+function ready(){for(let i=0;i<3;i++)flush();assert.equal(nodes['.exam-countdown-number'].textContent,3);assert.equal(clocks.size,0);for(let i=0;i<3;i++){time+=1000;flush();}assert.equal(clocks.size,1);}
+function field(index,value,select=false){return {dataset:{examIndex:String(index)},value,matches:selector=>select?selector.startsWith('select'):selector.startsWith('input')};}
+let view=api.create(options);view.renderLauncher(launcher);assert(launcher.innerHTML.includes('教材未追加: Unit 28'));
+view.launch(20);assert(open);assert(!progress['20-21']);ready();assert.equal(progress['20-21'].exam.remainingMs,api.DURATION,'preparation/countdown must not consume exam time');
+handlers.change({target:field(0,'draft-select',true)});handlers.input({target:field(8,'draft-text')});time+=5000;
+node('.exam-scroll').scrollTop=345;view.close();assert(open);assert(nodes['.exam-exit-dialog'].open);assert.equal(clocks.size,0);
+time+=10000;click('data-exam-keep');assert.equal(clocks.size,1);time+=1000;view.close();click('data-exam-pause');assert(!open);
+assert.equal(progress['20-21'].exam.answers[0],'draft-select');assert.equal(progress['20-21'].exam.answers[8],'draft-text');assert.equal(progress['20-21'].exam.remainingMs,api.DURATION-6000);
+const oldOrder=progress['20-21'].exam.questions.map(q=>q.word).join(',');
+view.launch(20);assert(nodes['.exam-start-dialog'].open);assert.equal(clocks.size,0);click('data-exam-resume');ready();assert.equal(progress['20-21'].exam.questions.map(q=>q.word).join(','),oldOrder);assert.equal(node('.exam-scroll').scrollTop,345);
+progress['20-21'].exam.questions.forEach((q,i)=>handlers[i<8?'change':'input']({target:field(i,q.answer,i<8)}));
 click('data-exam-submit');assert(nodes['.exam-confirm'].open);click('data-exam-grade');assert.equal(progress['20-21'].exam.status,'completed');assert.equal(progress['20-21'].perfectClearCount,1);assert.equal(api.grade(progress['20-21'].exam).score,15);
 click('data-exam-grade');assert.equal(progress['20-21'].perfectClearCount,1,'grading is idempotent');
 view.close();view.launch(20,true);assert.equal(progress['20-21'].perfectClearCount,1);assert.equal(clocks.size,0);view.close();
-view.launch(21);time+=api.DURATION+1;[...clocks.values()].forEach(fn=>fn());assert(progress['21-22'].exam.timedOut);assert.equal(progress['21-22'].exam.status,'completed');assert.equal(progress['21-22'].perfectClearCount,0);assert.equal(clocks.size,0);
-view.close();view.launch(22);time+=api.DURATION;
-handlers.input({target:field(8,'late-answer')});
-assert(progress['22-23'].exam.timedOut);assert.equal(progress['22-23'].exam.answers[8],'','expired input must not be accepted between timer ticks');
-assert(writes>0);
-console.log('OK: 8 dropdown + 7 spelling questions, both-unit coverage, unique 12-word bank, no typed-answer leak, exact grading, missing data, drafts/resume, elapsed time, timeout, idempotence and Tango books');
+view.launch(21);ready();time+=api.DURATION+1;[...clocks.values()].forEach(fn=>fn());assert(progress['21-22'].exam.timedOut);assert.equal(progress['21-22'].exam.status,'completed');assert.equal(clocks.size,0);
+view.close();view.launch(22);ready();time+=api.DURATION;handlers.input({target:field(8,'late-answer')});assert(progress['22-23'].exam.timedOut);assert.equal(progress['22-23'].exam.answers[8],'');view.close();
+view.launch(23);ready();handlers.input({target:field(8,'discard-me')});flush();view.close();storageWorks=false;click('data-exam-discard');assert(open);assert(progress['23-24'].exam);storageWorks=true;click('data-exam-discard');assert(!open);assert(!progress['23-24'].exam);assert.equal(scheduled.size,0);
+view.launch(24);ready();handlers.input({target:field(8,'keep-me')});view.close();storageWorks=false;click('data-exam-pause');assert(open);assert(nodes['.exam-exit-error'].textContent);storageWorks=true;click('data-exam-pause');
+const prior=JSON.stringify(progress['24-25'].exam);view.launch(24);click('data-exam-new');flush();click('data-exam-back');assert.equal(JSON.stringify(progress['24-25'].exam),prior,'cancelling preparation must preserve earlier attempt');assert.equal(scheduled.size,0);
+view.launch(24);click('data-exam-new');ready();assert(progress['24-25'].exam.answers.every(a=>!a));assert.equal(progress['24-25'].exam.remainingMs,api.DURATION);assert.notEqual(progress['24-25'].exam.questions.map(q=>q.word).join(','),JSON.parse(prior).questions.map(q=>q.word).join(','));
+view.close();handlers.cancel({target:{matches:s=>s==='.exam-exit-dialog'},preventDefault(){}});assert.equal(clocks.size,1);view.close();click('data-exam-discard');assert.equal(clocks.size,0);assert.equal(scheduled.size,0);assert(writes>0);
+console.log('OK: Dojo paper generation, grading, prepare/countdown timing, resume/new, paused exit/cancel, autosave, discard, storage failure, timeout and review');

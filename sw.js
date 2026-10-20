@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vocx-dojo-pwa-v53';
+const CACHE_NAME = 'vocx-dojo-pwa-v54';
 
 const PRECACHE_ASSETS = [
   './',

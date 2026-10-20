@@ -1506,6 +1506,19 @@ button:focus-visible, input:focus-visible {
 .exam-confirm > div { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
 .exam-confirm button { min-height: 44px; padding: 10px 16px; border: 1px solid #9ba7af; border-radius: 6px; background: #fff; color: #222b32; cursor: pointer; }
 .exam-confirm button[data-exam-grade] { background: #eee; border-color: #999; color: #333; }
+.exam-dialog-actions { flex-direction: column; }
+.exam-dialog-actions button { width: 100%; min-height: 44px; }
+.exam-dialog-actions [data-exam-pause], .exam-dialog-actions [data-exam-resume] { background: #e9f0f7; border-color: #1564b5; }
+.exam-exit-error:empty { display: none; }
+.exam-exit-error { color: #a62b32; }
+.exam-stage { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 24px; text-align: center; }
+.exam-stage h1 { font-size: 20px; font-weight: 400; }
+.exam-stage-label { font-size: 16px; line-height: 1.6; }
+.exam-load-progress { width: min(260px, 100%); height: 12px; accent-color: #1564b5; }
+.exam-load-progress[hidden] { display: none; }
+.exam-countdown-number { font-size: 96px; line-height: 1.2; font-variant-numeric: tabular-nums; font-weight: 600; color: #333; }
+.exam-countdown-number:empty { display: none; }
+.exam-stage > button { min-height: 44px; padding: 8px 20px; border: 1px solid #999; border-radius: 2px; color: #333; background: #eee; cursor: pointer; }
 .exam-answer-review { margin: 12px 0 0 26px; font-size: 14px; line-height: 1.8; display: flex; gap: 8px 16px; flex-wrap: wrap; }
 .exam-answer-review p { width: 100%; color: #59656d; }
 .exam-correct .exam-answer-review > strong { color: #146348; }
