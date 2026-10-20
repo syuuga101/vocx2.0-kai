@@ -97,7 +97,7 @@
   }
   function bookData(data) {
     const filled=v=>v.sentence.replace('_____',v.word==='DNA'?'DNA':v.sentence.startsWith('_____')?v.answer[0].toUpperCase()+v.answer.slice(1):v.answer);
-    return Object.fromEntries(listRanges(data).filter(range=>range.ready).map(range=>[range.id,{entries:questionPool(range.start,data).map(q=>({word:q.word,meaning:q.meaning,definition:q.definition,sentence:(data[String(q.unit)] || []).find(item=>item.word===q.word)?.sentence || '',examples:questionVariants(q).map(filled)}))}]));
+    return Object.fromEntries(listRanges(data).filter(range=>range.ready).map(range=>[range.id,{entries:questionPool(range.start,data).map(q=>({word:q.word,meaning:q.meaning,definition:q.definition,forms:[q.word,q.answer],sentence:(data[String(q.unit)] || []).find(item=>item.word===q.word)?.sentence || '',examples:questionVariants(q).map(filled)}))}]));
   }
 
   function create({root,getData,getProgress,saveProgress,onOpen,onClose,onCountdown=()=>{},now=Date.now}) {
@@ -132,7 +132,7 @@
         const review=validSaved(saved,range.id) && saved.status==='completed';
         const level=Math.min(2,progress.perfectClearCount||0);
         return '<article class="dojo-range" data-level="'+level+'"><div><h3>Unit '+range.start+'–'+range.end+'</h3><p>'+(range.ready?(review?'前回 '+grade(saved).score+' / 15':resume?'途中保存あり · '+saved.answers.filter(a=>normalize(a)).length+' / 15':'15 questions'):'教材未追加: Unit '+range.missing.join('・'))+'</p></div><div class="dojo-range-actions"><button type="button" data-exam-start="'+range.start+'" '+(!range.ready?'disabled':'')+' aria-label="Unit '+range.start+'–'+range.end+'を開始">'+(!range.ready?'準備中':'開始')+'</button>'+(review?'<button type="button" class="exam-review-link" data-exam-review="'+range.start+'">復習</button>':'')+'</div></article>';
-      }).join('')+'</div><p class="dojo-source-note">教材の例文と追加の練習用例文から出題します。実際の試験問題ではありません。Unit 28〜30は教材追加後に利用できます。</p>';
+      }).join('')+'</div>';
     }
     function questionHtml(question,index) {
       const number=index<8?index+1:index-7;

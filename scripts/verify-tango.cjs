@@ -38,4 +38,9 @@ click({},['data-tango-back']); assert(panel.innerHTML.includes('data-tango-unit=
 click({tangoSource:'dojo'});click({tangoUnit:'01'});assert(list.innerHTML.includes(getEntries('dojo','01',vocx,dojo)[0].word));
 const unsafe={'01':[{word:'<img onerror="alert(1)">',jpn:'<script>bad</script>'}]};
 const safeBook=create(panel,{getVocxData:()=>unsafe,getDojoData:()=>({})});safeBook.render();click({tangoUnit:'01'});assert(!list.innerHTML.includes('<img'));assert(list.innerHTML.includes('&lt;img'));
+const exampleData={'01':[{word:'bench',jpn:'ベンチ',sentence:'Sit on the bench.'},{word:'howl',inflected:'howled',jpn:'ほえる',sentence:'The wolf howled at the moon.'}]};
+const cards=create(panel,{getVocxData:()=>exampleData,getDojoData:()=>({})});cards.render();click({tangoUnit:'01'});
+handlers.input({target:{matches:()=>true,value:'howl'}});assert(list.innerHTML.includes('>02</span>'));assert(list.innerHTML.includes('<mark>howled</mark>'));
+handlers.toggle({target:{matches:()=>true,open:true,closest:()=>({dataset:{tangoWord:'howl'}})}});
+click({},['data-tango-hide']);assert(list.innerHTML.includes('class="tango-example" open'));assert(list.innerHTML.includes('meaning-hide'));
 console.log('OK: all Unit data, Dojo answers/explanations, deduplication, source/unit navigation, search, meaning reveal, escaped content');
