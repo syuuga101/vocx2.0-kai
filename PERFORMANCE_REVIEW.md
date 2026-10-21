@@ -40,3 +40,9 @@ Pointer/touch/keyboard interaction resumes the context early. Correct/wrong play
 Real Chromium diagnostic measurements: warmed UI handler to buffer start was 0–0.3ms; first context recovery was about 60ms. These numbers exclude OS/output-device/Bluetooth latency and are not audible end-to-end timing claims. A separate looping media element remained playing while a decoded effect started (`paused: false`). The real app's countdown and correct-feedback flow ran without warning/error logs. iPhone/Safari plus the Spotify app was not available for direct verification.
 
 All 21 verification scripts pass, including mixing configuration, buffer reuse, immediate start, mute/background, stale-resume rejection, cold fallback and precached offline availability of the audio engine. The app's layout and style remain unchanged.
+
+## Internal review before PC support (2026-10-21)
+
+Reviewed vocabulary rendering/cache invalidation, audio lifecycle, saved-state loading and release packaging. Fixed Vocx vocabulary mapping recreating entry objects on every search/toggle, which prevented the existing WeakMap search/highlight caches from being reused. Unchanged rows now retain entry identity; in-place content edits and replaced lesson arrays invalidate the cache. No HTML/CSS or interaction changes. Existing source lessons/debug assets remain development-only.
+
+All 21 verification scripts and the debug-free release build pass. Regression assertions cover cache reuse and both edit/replacement invalidation. Real browser checks covered Vocx Tango Unit02 navigation, search, empty results and meaning reveal/hide; screenshots inspected at 320x568, 390x844 and 1366x900. No console warnings/errors; no horizontal overflow at 320px. Physical mobile devices were not tested. No additional concrete internal defect was established in this bounded review. PC_SUPPORT_PLAN.md records the next phase without implementing desktop UI yet.

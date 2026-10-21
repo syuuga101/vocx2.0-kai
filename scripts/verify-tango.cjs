@@ -17,6 +17,13 @@ for (const id of Object.keys(dojo)) {
   assert.equal(new Set(entries.map(e=>e.word.toLowerCase()+'\n'+e.meaning)).size,entries.length);
 }
 assert.equal(getEntries('vocx','missing',vocx,dojo).length,0);
+const editable={'01':[{word:'test',jpn:'試験',sentence:'A test.'}]};
+const cachedEntries=getEntries('vocx','01',editable,{});
+assert.strictEqual(getEntries('vocx','01',editable,{}),cachedEntries,'unchanged rows reuse search/highlight cache keys');
+editable['01'][0].sentence='Another test.';
+assert.equal(getEntries('vocx','01',editable,{})[0].sentence,'Another test.','in-place edits invalidate cached entries');
+editable['01']=[{word:'new',jpn:'新しい'}];
+assert.equal(getEntries('vocx','01',editable,{})[0].word,'new','live data replacement invalidates cached entries');
 const handlers = {}, list = {innerHTML:''}, count = {}, scroller = {scrollTop:10};
 const panel = {
   innerHTML: '', contains:()=>true,

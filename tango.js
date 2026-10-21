@@ -1,12 +1,24 @@
 /* Unit vocabulary browser; data comes from the same source as each quiz. */
 (() => {
   'use strict';
+  const vocxEntries = new WeakMap();
   function getEntries(source, unitId, vocx, dojo) {
     if (source === 'vocx') {
-      return (vocx[unitId] || []).map(item => ({
+      const rows = vocx[unitId];
+      if (!rows) return [];
+      const cached = vocxEntries.get(rows);
+      if (cached && cached.length === rows.length && rows.every((item, i) => {
+        const entry = cached[i];
+        return entry.word === item.word && entry.meaning === (item.jpn || item.def || '') &&
+          entry.definition === (item.def || '') && entry.sentence === (item.sentence || '') &&
+          entry.forms.join('\n') === [item.word,item.inflected].filter(Boolean).join('\n');
+      })) return cached;
+      const entries = rows.map(item => ({
         word: item.word, meaning: item.jpn || item.def || '',
         definition: item.def || '', sentence: item.sentence || '', forms:[item.word,item.inflected].filter(Boolean)
       }));
+      vocxEntries.set(rows, entries);
+      return entries;
     }
     if (Array.isArray(dojo[unitId]?.entries)) return dojo[unitId].entries;
     const entries = [];
