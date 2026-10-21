@@ -30,9 +30,10 @@ const book = create(panel,{getVocxData:()=>vocx,getDojoData:()=>dojo}); book.ren
 assert(panel.innerHTML.includes('data-tango-unit="02"'));
 function click(dataset, attributes=[]) {handlers.click({target:{closest:()=>({dataset,hasAttribute:name=>attributes.includes(name),setAttribute(){}})}});}
 click({tangoUnit:'02'}); assert(list.innerHTML.includes(vocx['02'][0].word)); assert.equal(scroller.scrollTop,0);
+assert(list.innerHTML.includes('意味を見る'),'meanings start hidden');
 const word = vocx['02'][0].word;
 handlers.input({target:{matches:()=>true,value:word}}); assert(list.innerHTML.includes(word));
-click({},['data-tango-hide']); assert(list.innerHTML.includes('意味を見る'));
+click({},['data-tango-hide']); assert(!list.innerHTML.includes('meaning-show'),'global toggle reveals meanings');
 handlers.input({target:{matches:()=>true,value:'<script>unlikely-term</script>'}}); assert(list.innerHTML.includes('該当する単語がありません'));
 click({},['data-tango-back']); assert(panel.innerHTML.includes('data-tango-unit="02"'));
 click({tangoSource:'dojo'});click({tangoUnit:'01'});assert(list.innerHTML.includes(getEntries('dojo','01',vocx,dojo)[0].word));
@@ -42,5 +43,5 @@ const exampleData={'01':[{word:'bench',jpn:'ベンチ',sentence:'Sit on the benc
 const cards=create(panel,{getVocxData:()=>exampleData,getDojoData:()=>({})});cards.render();click({tangoUnit:'01'});
 handlers.input({target:{matches:()=>true,value:'howl'}});assert(list.innerHTML.includes('>02</span>'));assert(list.innerHTML.includes('<mark>howled</mark>'));
 handlers.toggle({target:{matches:()=>true,open:true,closest:()=>({dataset:{tangoWord:'howl'}})}});
-click({},['data-tango-hide']);assert(list.innerHTML.includes('class="tango-example" open'));assert(list.innerHTML.includes('meaning-hide'));
+click({},['data-tango-hide']);assert(list.innerHTML.includes('class="tango-example" open'));assert(!list.innerHTML.includes('meaning-hide'));
 console.log('OK: all Unit data, Dojo answers/explanations, deduplication, source/unit navigation, search, meaning reveal, escaped content');

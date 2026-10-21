@@ -46,19 +46,19 @@
     const additional=window.DOJO_EXAMPLE_DATA?.[String(question.unit)]?.[question.word] || [];
     return [question,...additional.map(sentence=>({...question,sentence,answer:question.word.toLowerCase(),source:'practice'}))];
   }
+  function rangeInfo(start,data,pool=questionPool(start,data)) {
+    const missing=[start,start+1].filter(unit=>!(data[String(unit)] || []).length);
+    return {id:start+'-'+(start+1),start,end:start+1,missing,ready:missing.length===0 && pool.length>=19 && [start,start+1].every(unit=>pool.filter(q=>q.unit===unit).length>=8)};
+  }
   function listRanges(data) {
-    return Array.from({length:11}, (_,i) => {
-      const start = 19 + i;
-      const missing = [start,start+1].filter(unit => !(data[String(unit)] || []).length);
-      const pool=questionPool(start,data);
-      return {id:start+'-'+(start+1),start,end:start+1,missing,ready:missing.length===0 && pool.length>=19 && [start,start+1].every(unit=>pool.filter(q=>q.unit===unit).length>=8)};
-    });
+    return Array.from({length:11},(_,i)=>rangeInfo(19+i,data));
   }
   function buildExam(start, data, random = Math.random) {
-    const range = listRanges(data).find(range=>range.start===start);
+    const pool=questionPool(start,data);
+    const range=Number.isInteger(start) && start>=19 && start<=29?rangeInfo(start,data,pool):null;
     if (!range?.ready) throw new Error('この範囲の教材が不足しています');
     // Use both units in both sections, never two unrelated or partially loaded units.
-    const groups = [start,start+1].map(unit=>shuffle(questionPool(start,data).filter(q=>q.unit===unit),random));
+    const groups = [start,start+1].map(unit=>shuffle(pool.filter(q=>q.unit===unit),random));
     if (groups.some(group=>group.length<8)) throw new Error('各Unitに8語以上の出題可能な例文が必要です');
     const pickVariant=q=>{const variants=questionVariants(q);return variants[Math.floor(random()*variants.length)];};
     const selectedWords=[];
@@ -74,7 +74,7 @@
     const typed = shuffle([...groups[0].splice(0,4),...groups[1].splice(0,3)],random).map(pickVariant);
     const used = new Set([...selected,...typed].map(q=>normalize(q.word)));
     const distractors=[];
-    for(const q of shuffle(questionPool(start,data).filter(q=>!used.has(normalize(q.word))),random)){
+    for(const q of shuffle(pool.filter(q=>!used.has(normalize(q.word))),random)){
       if([...selected,...distractors].some(other=>conflicts(other.word,q.word)))continue;
       distractors.push(q);if(distractors.length===4)break;
     }
@@ -89,15 +89,20 @@
     return {checks,score:checks.filter(Boolean).length,total:exam.questions.length};
   }
   function validSaved(exam, id) {
-    return exam?.version===VERSION && exam.id===id && Array.isArray(exam.questions) && exam.questions.length===15 &&
+    return exam?.version===VERSION && exam.id===id && Number.isInteger(exam.start) && exam.start>=19 && exam.start<=29 && exam.end===exam.start+1 && id===exam.start+'-'+exam.end && Array.isArray(exam.questions) && exam.questions.length===15 &&
       Array.isArray(exam.answers) && exam.answers.length===15 && exam.answers.every(value=>typeof value==='string') &&
       Array.isArray(exam.bank) && exam.bank.length===12 && exam.bank.every(value=>typeof value==='string' && normalize(value)) && new Set(exam.bank.map(normalize)).size===12 &&
-      exam.questions.every((q,i)=>typeof q.sentence==='string' && typeof q.answer==='string' && normalize(q.answer) && q.type===(i<8?'select':'type') && (i>=8 || exam.bank.includes(q.answer))) &&
+      exam.questions.every((q,i)=>q && typeof q.sentence==='string' && typeof q.answer==='string' && normalize(q.answer) && q.type===(i<8?'select':'type') && (i>=8 || exam.bank.includes(q.answer))) &&
       ['in-progress','completed'].includes(exam.status) && Number.isFinite(exam.remainingMs) && exam.remainingMs>=0 && exam.remainingMs<=DURATION;
   }
+  const booksCache=new WeakMap();
   function bookData(data) {
+    const refs=Array.from({length:12},(_,i)=>data[String(19+i)]);
+    const cached=booksCache.get(data);
+    if(cached && cached.examples===window.DOJO_EXAMPLE_DATA && refs.every((rows,i)=>rows===cached.refs[i]))return cached.books;
     const filled=v=>v.sentence.replace('_____',v.word==='DNA'?'DNA':v.sentence.startsWith('_____')?v.answer[0].toUpperCase()+v.answer.slice(1):v.answer);
-    return Object.fromEntries(listRanges(data).filter(range=>range.ready).map(range=>[range.id,{entries:questionPool(range.start,data).map(q=>({word:q.word,meaning:q.meaning,definition:q.definition,forms:[q.word,q.answer],sentence:(data[String(q.unit)] || []).find(item=>item.word===q.word)?.sentence || '',examples:questionVariants(q).map(filled)}))}]));
+    const books=Object.fromEntries(listRanges(data).filter(range=>range.ready).map(range=>[range.id,{entries:questionPool(range.start,data).map(q=>({word:q.word,meaning:q.meaning,definition:q.definition,forms:[q.word,q.answer],sentence:(data[String(q.unit)] || []).find(item=>item.word===q.word)?.sentence || '',examples:questionVariants(q).map(filled)}))}]));
+    booksCache.set(data,{refs,examples:window.DOJO_EXAMPLE_DATA,books});return books;
   }
 
   function create({root,getData,getProgress,saveProgress,onOpen,onClose,onCountdown=()=>{},now=Date.now}) {
@@ -228,6 +233,7 @@
       root.querySelector('.exam-confirm')?.close();
       root.querySelector('.exam-exit-dialog')?.close();
       root.classList.remove('active');delete document.documentElement.dataset.dojoExam;
+      root.innerHTML='';
       const id=pendingStart;exam=null;startedAt=null;phase='idle';onClose();
       launcher?.querySelector('[data-exam-start="'+id+'"]')?.focus({preventScroll:true});
     }

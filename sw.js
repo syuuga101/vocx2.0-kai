@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vocx-dojo-pwa-v56';
+const CACHE_NAME = 'vocx-dojo-pwa-v58';
 
 const PRECACHE_ASSETS = [
   './',
@@ -9,6 +9,7 @@ const PRECACHE_ASSETS = [
   './tango.js',
   './study-plan.js',
   './dojo-exam.js',
+  './sound-effects.js',
   './debug.js',
   './sys/mode-jp-en.png',
   './sys/mode-en-en.png',

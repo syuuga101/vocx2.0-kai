@@ -1,5 +1,11 @@
 # UI / UX review — 2026-10-20
 
+## Internal optimization follow-up
+
+2026-10-21 audio follow-up: the HTML audio cloning path was replaced by predecoded Web Audio and a non-exclusive ambient session request where supported. No layout/style changes were made. Real Chromium checks covered the new countdown/correct-feedback path, meaning-hidden default, search/reveal/highlights and empty states. A local real-audio diagnostic measured warmed handler-to-buffer-start at 0–0.3ms, and a separate looping audio element remained unpaused. This does not establish iPhone/Spotify behavior or output-device latency. All 21 verification scripts and the final release build pass; see `PERFORMANCE_REVIEW.md` for scope and limits.
+
+Meanings now start hidden as requested. The existing manually hidden state and new default state were compared at 390×844 after animations settled: zero image color-channel differences. CSS/layout were not changed. Packaging, caching, lossless asset recompression and robustness results are recorded in `PERFORMANCE_REVIEW.md`.
+
 ## Dojo exam rework
 
 Tango visual grouping update: each word, its meaning and expandable examples now share a bordered surface. The word and number form a clear header, meaning is inset underneath, and examples use a distinct full-width disclosure row with an open/closed chevron. Example target words and known inflections are emphasized; definitions and numbered contexts remain inside the same card. Meaning reveal controls change labels with state, example expansion survives the global meaning toggle, and filtering preserves original word numbers. Dojo's redundant explanatory footer was removed; unavailable ranges retain their inline status.

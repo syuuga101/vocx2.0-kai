@@ -28,23 +28,31 @@
   }
 
   function create(panel, { getVocxData, getDojoData, getUpcoming=()=>null }) {
-    let source = 'vocx', unitId = null, query = '', hideMeaning = false, initialized=false;
+    let source = 'vocx', unitId = null, query = '', hideMeaning = true, initialized=false;
     const expanded=new Set();
+    const searchText=new WeakMap(), highlighted=new WeakMap();
     const entryKey=word=>source+'/'+unitId+'/'+word;
     const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const entries = () => getEntries(source, unitId, getVocxData(), getDojoData());
 
     function highlight(sentence,item) {
+      let cached=highlighted.get(item);
+      if(!cached){cached=new Map();highlighted.set(item,cached);}
+      if(cached.has(sentence))return cached.get(sentence);
       const forms=[...new Set([item.word,...(item.forms || [])].filter(Boolean))].sort((a,b)=>b.length-a.length);
       const pattern=new RegExp('\\b('+forms.map(word=>word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')\\b','gi');
-      return String(sentence).split(pattern).map((part,i)=>i%2?'<mark>'+escape(part)+'</mark>':escape(part)).join('');
+      const html=String(sentence).split(pattern).map((part,i)=>i%2?'<mark>'+escape(part)+'</mark>':escape(part)).join('');
+      cached.set(sentence,html);return html;
     }
     function renderItems() {
       const list = panel.querySelector('.tango-entries');
       if (!list) return;
       const all = entries();
       const needle = query.trim().toLocaleLowerCase();
-      const filtered = all.filter(item => [item.word, item.meaning, item.definition, item.sentence,...(item.examples || [])].some(value => value.toLocaleLowerCase().includes(needle)));
+      const filtered = all.filter(item => {
+        if(!searchText.has(item))searchText.set(item,[item.word,item.meaning,item.definition,item.sentence,...(item.examples || [])].map(value=>String(value || '').toLocaleLowerCase()).join('\n'));
+        return searchText.get(item).includes(needle);
+      });
       panel.querySelector('.tango-count').textContent = filtered.length + ' / ' + all.length;
       list.innerHTML = filtered.length ? filtered.map(item => `<article class="tango-entry" data-tango-word="${escape(item.word)}">
         <div class="tango-entry-copy"><header class="tango-word-heading"><span class="tango-entry-number" aria-hidden="true">${String(all.indexOf(item)+1).padStart(2,'0')}</span><h3 lang="en">${escape(item.word)}</h3></header>

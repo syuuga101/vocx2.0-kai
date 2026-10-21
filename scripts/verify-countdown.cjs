@@ -36,12 +36,7 @@ c.closeQuizScreen();
 console.log('OK: three-second countdown precedes rendering, excludes answer time and skips resume');
 
 const played = [];
-class AudioStub {
-  constructor(src) { this.src = src; this.playbackRate = 1; }
-  cloneNode() { return new AudioStub(this.src); }
-  play() { played.push({src: this.src, rate: this.playbackRate, preservesPitch: this.preservesPitch}); return Promise.resolve(); }
-}
-const audioContext = {Audio: AudioStub, appState: {settings: {soundEffects: true}}};
+const audioContext = {appState: {settings: {soundEffects: true}},window:{SoundEffects:{create:({files,enabled})=>({play(type){if(enabled())played.push({src:files[type],rate:1});}})}}};
 vm.createContext(audioContext);
 vm.runInContext(js.slice(js.indexOf('  const SE_FILES'), js.indexOf('  function parseCSVText')), audioContext);
 audioContext.playSound('countdown'); audioContext.playSound('countdownStart');

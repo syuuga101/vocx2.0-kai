@@ -140,34 +140,9 @@
     countdownStart: './se/countdown-start.wav'
   };
 
-  const preloadedAudio = {};
-  Object.entries(SE_FILES).forEach(([key, src]) => {
-    try {
-      const a = new Audio(src);
-      a.preload = 'auto';
-      preloadedAudio[key] = a;
-    } catch (e) {
-      // Ignore preload errors
-    }
-  });
-
+  const soundEffects=window.SoundEffects.create({files:SE_FILES,enabled:()=>appState.settings.soundEffects});
   function playSound(type) {
-    if (!appState.settings.soundEffects) return;
-    try {
-      const src = SE_FILES[type] || SE_FILES.tap;
-      const baseAudio = preloadedAudio[type];
-      if (baseAudio) {
-        const sound = baseAudio.cloneNode();
-        sound.volume = 0.85;
-        sound.play().catch(() => {});
-      } else {
-        const sound = new Audio(src);
-        sound.volume = 0.85;
-        sound.play().catch(() => {});
-      }
-    } catch (e) {
-      // Ignore audio errors
-    }
+    soundEffects.play(type);
   }
 
   /* =========================================================================
@@ -1181,13 +1156,11 @@
     }
     if (isCorrect) {
       currentSession.correctCount++;
-      playSound('correct');
-    } else {
-      playSound('wrong');
     }
     if (!isCorrect) (currentSession.mistakes ||= []).push({ word: q.wordDisplay, meaning: q.subDisplay });
     saveQuizCheckpoint();
     openCheckSheet(isCorrect, q.wordDisplay, q.subDisplay);
+    playSound(isCorrect?'correct':'wrong');
   }
 
   function submitTypeAnswer() {
@@ -1215,13 +1188,11 @@
     document.getElementById('meaning-hint-btn').disabled = true;
     if (isCorrect) {
       currentSession.correctCount++;
-      playSound('correct');
-    } else {
-      playSound('wrong');
     }
     if (!isCorrect) (currentSession.mistakes ||= []).push({ word: q.wordDisplay, meaning: q.subDisplay });
     saveQuizCheckpoint();
     openCheckSheet(isCorrect, q.wordDisplay, q.subDisplay);
+    playSound(isCorrect?'correct':'wrong');
   }
 
   function openCheckSheet(isCorrect, wordText, subText) {

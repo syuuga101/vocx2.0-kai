@@ -10,7 +10,12 @@ function releaseApp(source) {
   const initialize = source.indexOf('  /* Initialize */');
   const boot = source.indexOf('  syncViewportHeight();', initialize);
   source = source.slice(0, initialize) + '  /* Initialize */\n' + source.slice(boot);
+  const liveStart=source.indexOf('  function parseCSVText');
+  const liveEnd=source.indexOf('  const CHECK_BADGE_SVG',liveStart);
+  if(liveStart<0 || liveEnd<=liveStart)throw Error('Development loader boundaries not found');
+  source=source.slice(0,liveStart)+source.slice(liveEnd);
   source = source.replace(/^.*let debug(?:Progress|Sandbox) = null;.*\n/gm, '')
+    .replace(/^  tryFetchLiveFiles\(\);\r?\n/m,'')
     .replace(/^.*if \(debugSandbox.*\n/gm, '')
     .replace(/^.*if \(debugProgress.*\n/gm, '')
     .replace(/^.*document.querySelector\('\.debug-panel\[open\]'\).*\n/gm, '')
@@ -28,8 +33,10 @@ function buildPages() {
   const write = (file, text) => fs.writeFileSync(path.join(output, file), text);
   write('index.html', read('index.html').replace(/  <!-- Development only:[^\n]*\n/, '').replace(/  <script src="\.\/debug.js"><\/script>\n/, ''));
   write('app.js', releaseApp(read('app.js')));
-  write('sw.js', read('sw.js').replace(/pwa-v(\d+)/, 'pwa-v$1-release').replace(/  '\.\/debug.js',\n/, ''));
-  for (const file of ['ui.css', 'data.js', 'study-plan.js', 'tango.js', 'dojo-exam.js', 'manifest.json']) fs.copyFileSync(path.join(root, file), path.join(output, file));
+  write('sw.js', read('sw.js').replace(/pwa-v(\d+)/, 'pwa-v$1-release').replace(/  '\.\/debug.js',\n/, '')
+    .replace(/^  '\.\/dojo\/[^']+',?\n/gm,'')
+    .replace(/\nfor \(let i = 2; i <= 27; i\+\+\) \{[\s\S]*?\n\}\n/,'\n'));
+  for (const file of ['ui.css', 'data.js', 'study-plan.js', 'tango.js', 'dojo-exam.js', 'sound-effects.js', 'manifest.json']) fs.copyFileSync(path.join(root, file), path.join(output, file));
   const assets = [
     'sys/icon.svg', 'sys/icon-192.png', 'sys/icon-512.png', 'sys/apple-touch-icon.png',
     'sys/mode-jp-en.png', 'sys/mode-en-en.png',
@@ -41,16 +48,8 @@ function buildPages() {
     fs.mkdirSync(path.dirname(path.join(output, asset)), {recursive: true});
     fs.copyFileSync(path.join(root, asset), path.join(output, asset));
   }
-  for (const folder of ['vocx', 'dojo']) {
-    const copy = (relative) => {
-      const from = path.join(root, relative), to = path.join(output, relative);
-      if (fs.statSync(from).isDirectory()) {
-        fs.mkdirSync(to, {recursive: true});
-        for (const file of fs.readdirSync(from)) copy(path.join(relative, file));
-      } else if (/\.(?:csv|json)$/i.test(relative)) fs.copyFileSync(from, to);
-    };
-    copy(folder);
-  }
+  // All lessons and practice contexts are already in data.js. Keep editable
+  // CSV/JSON in the repository, without downloading/pre-caching them a second time.
   write('.nojekyll', '');
   return output;
 }

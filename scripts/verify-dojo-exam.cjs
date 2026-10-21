@@ -33,8 +33,14 @@ for(const range of ranges){
 }
 const invalid=api.buildExam(20,data);invalid.answers[0]={bad:true};assert(!api.validSaved(invalid,'20-21'));
 const malformed=api.buildExam(20,data);malformed.bank[1]=malformed.bank[0];assert(!api.validSaved(malformed,'20-21'));
+const brokenQuestion=api.buildExam(20,data);brokenQuestion.questions[0]=null;assert(!api.validSaved(brokenQuestion,'20-21'),'corrupt saved rows must not crash the launcher');
+const wrongRange=api.buildExam(20,data);wrongRange.start='20';assert(!api.validSaved(wrongRange,'20-21'));
 const empty=api.listRanges({'20':[{}],'21':[{}]});assert(!empty.find(r=>r.start===20).ready);
 const books=api.bookData(data);assert.equal(Object.keys(books).length,8);assert.equal(books['20-21'].entries.length,40);
+assert.strictEqual(api.bookData(data),books,'unchanged lessons reuse books');
+const edited={...data,'20':data['20'].map((row,i)=>i?row:{...row,jpn:'updated meaning'})};
+const editedBooks=api.bookData(edited);assert.equal(editedBooks['20-21'].entries[0].meaning,'updated meaning');
+edited['20']=data['20'];assert.notStrictEqual(api.bookData(edited),editedBooks,'live lesson replacement invalidates cached books');
 
 let time=10000,writes=0,open=false,storageWorks=true;const progress={},nodes={},handlers={};
 const node=selector=>nodes[selector] ||= {textContent:'',classList:{toggle(){}},focus(){},showModal(){this.open=true;},close(){this.open=false;},scrollTop:0};
@@ -51,6 +57,7 @@ handlers.change({target:field(0,'draft-select',true)});handlers.input({target:fi
 node('.exam-scroll').scrollTop=345;view.close();assert(open);assert(nodes['.exam-exit-dialog'].open);assert.equal(clocks.size,0);
 time+=10000;click('data-exam-keep');assert.equal(clocks.size,1);time+=1000;view.close();click('data-exam-pause');assert(!open);
 assert.equal(progress['20-21'].exam.answers[0],'draft-select');assert.equal(progress['20-21'].exam.answers[8],'draft-text');assert.equal(progress['20-21'].exam.remainingMs,api.DURATION-6000);
+assert.equal(root.innerHTML,'','exited exam must release hidden questions and controls');
 const oldOrder=progress['20-21'].exam.questions.map(q=>q.word).join(',');
 view.launch(20);assert(nodes['.exam-start-dialog'].open);assert.equal(clocks.size,0);click('data-exam-resume');ready();assert.equal(progress['20-21'].exam.questions.map(q=>q.word).join(','),oldOrder);assert.equal(node('.exam-scroll').scrollTop,345);
 progress['20-21'].exam.questions.forEach((q,i)=>handlers[i<8?'change':'input']({target:field(i,q.answer,i<8)}));
