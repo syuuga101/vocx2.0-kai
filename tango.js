@@ -90,6 +90,8 @@
           return `<button type="button" class="tango-unit${priority(id)===0?' is-upcoming':''}" data-tango-unit="${escape(id)}"><span>Unit ${escape(id)}</span><small>${priority(id)===0?'次のテスト · ':''}${count} ${source === 'vocx' ? 'words' : 'items'}</small><span aria-hidden="true">›</span></button>`;
         }).join('') || '<p class="tango-empty">単語帳はまだありません</p>'}</div>`);
       } else {
+        const data = source === 'vocx' ? getVocxData() : getDojoData();
+        panel.insertAdjacentHTML('beforeend', `<nav class="desktop-book-nav" aria-label="単語帳のUnit">${Object.keys(data).sort((a,b)=>parseInt(a,10)-parseInt(b,10)).map(id=>`<button type="button" data-tango-unit="${escape(id)}" ${id===unitId?'aria-current="page"':''}>Unit ${escape(id)}</button>`).join('')}</nav>`);
         panel.insertAdjacentHTML('beforeend', `<div class="tango-book-heading"><button type="button" class="tango-back" data-tango-back aria-label="Unit一覧に戻る">‹ Units</button><h2>Unit ${escape(unitId)}</h2><span class="tango-count" aria-live="polite"></span></div>
           <div class="tango-tools"><label class="tango-search-label"><span class="sr-only">単語・意味を検索</span><input class="tango-search" type="search" placeholder="単語・意味を検索" value="${escape(query)}" autocomplete="off" /></label>
           <button type="button" class="tango-hide" data-tango-hide aria-pressed="${hideMeaning}">${hideMeaning?'意味を表示':'意味を隠す'}</button></div>
@@ -98,6 +100,10 @@
       }
     }
     function scrollTop() { panel.closest('.units-scroll').scrollTop = 0; }
+    function focusBook() {
+      const current = panel.querySelector('.desktop-book-nav [aria-current="page"]');
+      (current?.getClientRects?.().length ? current : panel.querySelector('.tango-back')).focus({preventScroll:true});
+    }
     panel.addEventListener('click', event => {
       const target = event.target.closest('button');
       if (!target || !panel.contains(target)) return;
@@ -105,13 +111,13 @@
         const upcoming=getUpcoming();
         if(!upcoming || !getEntries('dojo',upcoming.id,getVocxData(),getDojoData()).length)return;
         source='dojo';unitId=upcoming.id;query='';render();scrollTop();
-        panel.querySelector('.tango-back').focus({preventScroll:true});
+        focusBook();
       } else if (target.dataset.tangoSource) {
         source = target.dataset.tangoSource; unitId = null; query = ''; render(); scrollTop();
         panel.querySelector('[data-tango-source="' + source + '"]').focus({preventScroll: true});
       } else if (target.dataset.tangoUnit) {
         unitId = target.dataset.tangoUnit; query = ''; render(); scrollTop();
-        panel.querySelector('.tango-back').focus({preventScroll: true});
+        focusBook();
       } else if (target.hasAttribute('data-tango-back')) {
         const previousUnit = unitId; unitId = null; query = ''; render(); scrollTop();
         [...panel.querySelectorAll('[data-tango-unit]')].find(button => button.dataset.tangoUnit === previousUnit)?.focus({preventScroll: true});

@@ -9,7 +9,7 @@ const button = {
   setPointerCapture: id => capture = id, hasPointerCapture: id => capture === id,
   releasePointerCapture: () => capture = null, addEventListener: (type, fn) => handlers[type] = fn
 };
-const c = { cancelChoicePress: null, currentSession: {answeredCurrent: false}, confirmChoiceAnswer() { submissions++; c.currentSession.answeredCurrent = true; } };
+const c = { desktopUI: null, cancelChoicePress: null, currentSession: {answeredCurrent: false}, confirmChoiceAnswer() { submissions++; c.currentSession.answeredCurrent = true; } };
 vm.createContext(c); vm.runInContext(extract('bindChoiceButton', 'escapeHtml'), c); c.bindChoiceButton(button, 2);
 const event = (x = 50, y = 30) => ({isPrimary: true, button: 0, pointerId: 1, clientX: x, clientY: y});
 function reset() { c.currentSession = {answeredCurrent: false}; classes.clear(); }

@@ -36,7 +36,7 @@ function buildPages() {
   write('sw.js', read('sw.js').replace(/pwa-v(\d+)/, 'pwa-v$1-release').replace(/  '\.\/debug.js',\n/, '')
     .replace(/^  '\.\/dojo\/[^']+',?\n/gm,'')
     .replace(/\nfor \(let i = 2; i <= 27; i\+\+\) \{[\s\S]*?\n\}\n/,'\n'));
-  for (const file of ['ui.css', 'data.js', 'study-plan.js', 'tango.js', 'dojo-exam.js', 'sound-effects.js', 'manifest.json']) fs.copyFileSync(path.join(root, file), path.join(output, file));
+  for (const file of ['ui.css', 'desktop.css', 'desktop.js', 'data.js', 'study-plan.js', 'tango.js', 'dojo-exam.js', 'sound-effects.js', 'manifest.json']) fs.copyFileSync(path.join(root, file), path.join(output, file));
   const assets = [
     'sys/icon.svg', 'sys/icon-192.png', 'sys/icon-512.png', 'sys/apple-touch-icon.png',
     'sys/mode-jp-en.png', 'sys/mode-en-en.png',

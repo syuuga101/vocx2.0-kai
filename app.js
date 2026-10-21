@@ -34,6 +34,7 @@
   let studyClock = null;
   let studyTick = 0;
   let countdownTick = 0;
+  let desktopUI = null;
 
   function formatStudyTime(ms) {
     const seconds = Math.floor(ms / 1000);
@@ -349,6 +350,8 @@
   }
 
   function renderHomeUnits() {
+    const desktopTitle = document.getElementById('desktop-home-title');
+    if (desktopTitle) desktopTitle.textContent = {vocx:'Vocx',dojo:'Dojo',tango:'Tango'}[appState.face] || 'Vocx';
     document.documentElement.dataset.face = appState.face;
     const listEl = document.getElementById('units-list');
     document.getElementById('face-vocx-btn').setAttribute('aria-pressed', String(appState.face === 'vocx'));
@@ -766,6 +769,7 @@
     document.querySelectorAll('.choice-btn').forEach(button => {
       button.classList.toggle('selected', Number(button.dataset.choiceIndex) === selectedChoice);
     });
+    desktopUI?.refresh();
     saveQuizCheckpoint();
   }
 
@@ -794,7 +798,7 @@
       cancelQuizCountdown();
       renderCurrentQuestion();
       if (withCountdown) saveQuizCheckpoint();
-      if (!appState.pauseHintSeen) {
+      if (!appState.pauseHintSeen && !desktopUI?.enabled()) {
         showToast('上のバーを下にスワイプすると一時停止');
         appState.pauseHintSeen = true;
         saveState();
@@ -1020,6 +1024,12 @@
       if (currentSession.secondLetterHint) showSecondLetter();
       const formEl = document.getElementById('type-input-form');
       const inputEl = document.getElementById('type-native-input');
+      let composing = false;
+      inputEl.addEventListener('compositionstart', () => { composing = true; });
+      inputEl.addEventListener('compositionend', () => { composing = false; });
+      inputEl.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && (event.isComposing || composing || event.repeat)) event.preventDefault();
+      });
       inputEl.addEventListener('input', () => {
         if (!currentSession) return;
         inputEl.setCustomValidity('');
@@ -1032,6 +1042,7 @@
       });
       formEl.addEventListener('submit', e => {
         e.preventDefault();
+        if (composing) return;
         submitTypeAnswer();
       });
       setTimeout(() => {
@@ -1081,6 +1092,7 @@
       contentEl.querySelectorAll('.choice-btn').forEach((button, index) => bindChoiceButton(button, index));
       contentEl.focus({ preventScroll: true });
     }
+    desktopUI?.refresh();
   }
 
   function bindChoiceButton(button, index) {
@@ -1098,6 +1110,7 @@
     };
     const submit = () => {
       if (!currentSession || currentSession.answeredCurrent) return;
+      if (desktopUI?.enabled()) { desktopUI.select(index); return; }
       currentSession.selectedChoice = index;
       button.classList.add('selected');
       confirmChoiceAnswer();
@@ -1382,13 +1395,15 @@
    * 9. KEYBOARD SHORTCUTS (Check Sheet / Profile Name Modal)
    * ========================================================================= */
   window.addEventListener('keydown', e => {
+    if (e.defaultPrevented || e.isComposing || e.keyCode === 229 || document.querySelector('dialog[open]')) return;
     if (document.querySelector('.debug-panel[open]')) return;
     if (e.repeat) return;
     if (document.getElementById('name-modal').classList.contains('open')) {
-      if (e.key === 'Enter') saveProfileName();
+      if (e.key === 'Enter') { e.preventDefault(); saveProfileName(); }
       return;
     }
-    if (!currentSession) return;
+    if (document.querySelector('.modal-overlay.open')) return;
+    if (!currentSession || !document.getElementById('screen-quiz').classList.contains('active')) return;
     if (document.getElementById('check-sheet').classList.contains('open')) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -1737,6 +1752,12 @@
     renderHomeUnits();
   });
   syncViewportHeight();
+  desktopUI = window.DesktopUI?.create({
+    session: () => currentSession,
+    checkpoint: saveQuizCheckpoint,
+    confirm: confirmChoiceAnswer,
+    next: advanceToNextQuestion
+  });
   syncSettingsUI();
   switchTab(appState.activeTab || 'home', false);
   renderHomeUnits();

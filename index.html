@@ -18,6 +18,7 @@
   <!-- Font Awesome Classic Free. Etch requires a Pro+ Kit. -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="./ui.css" />
+  <link rel="stylesheet" href="./desktop.css" />
 </head>
 <body>
   <div id="ios-blur-fix" class="ios-blur-fix" aria-hidden="true"></div>
@@ -29,6 +30,7 @@
     <div id="screen-main" class="screen active">
       <!-- Top Header (Tap to toggle Vocx / Dojo) -->
       <header class="app-header">
+        <div class="desktop-brand" aria-hidden="true">Vocx<span>LEARNING SPACE</span></div>
         <div class="face-tabs" role="group" aria-label="学習コンテンツ">
           <button id="face-vocx-btn" class="face-tab" type="button" aria-pressed="true">Vocx</button>
           <button id="face-dojo-btn" class="face-tab" type="button" aria-pressed="false">Dojo</button>
@@ -38,6 +40,7 @@
 
       <!-- Home Tab View -->
       <main id="tab-home" class="units-scroll">
+        <h1 id="desktop-home-title" class="desktop-home-title">Vocx</h1>
         <section id="dojo-panel" class="dojo-panel" aria-label="Dojoテスト範囲" hidden></section>
         <section id="tango-panel" class="tango-panel" aria-label="Unit別単語帳" hidden></section>
         <div id="units-list" class="units-list">
@@ -130,6 +133,7 @@
         <div id="quiz-content" class="quiz-content" tabindex="-1" role="region" aria-label="問題">
           <!-- Populated dynamically per question -->
         </div>
+        <div class="desktop-quiz-actions"><span>↑ ↓ ← → 選択 · Enter 解答 · Esc 一時停止</span><button id="desktop-answer" type="button" disabled>解答する <kbd>Enter</kbd></button></div>
 
       </div>
 
@@ -203,6 +207,7 @@
   <script src="./tango.js"></script>
   <script src="./dojo-exam.js"></script>
   <script src="./sound-effects.js"></script>
+  <script src="./desktop.js"></script>
   <script src="./app.js"></script>
   <!-- Development only: remove this script and its precache entry before release. -->
   <script src="./debug.js"></script>

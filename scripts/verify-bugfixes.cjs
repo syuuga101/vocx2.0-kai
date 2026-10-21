@@ -4,7 +4,7 @@ const extract = (name, next) => js.slice(js.indexOf('  function ' + name), js.in
 const elements = {}, storage = new Map();
 const el = id => elements[id] ||= {dataset: {}, style: {}, value: '', textContent: '', innerHTML: '', setAttribute(k, v) {this[k] = v;}, focus() {}, blur() {}, setCustomValidity(text) {this.error = text;}, reportValidity() {}, classList: {add() {}, remove() {}, toggle() {}, contains() {return false;}}};
 let rendered = 0, finished = 0;
-const c = {structuredClone, STORAGE_KEY: 'state', LEGACY_STORAGE_KEY: 'legacy', debugSandbox: null,
+const c = { desktopUI: null,structuredClone, STORAGE_KEY: 'state', LEGACY_STORAGE_KEY: 'legacy', debugSandbox: null,
   defaultState: {profileName: '@Name', settings: {}, vocxProgress: {}, dojoProgress: {}},
   appState: {settings: {}, vocxProgress: {'06': {clearedModes: {'eng-type': true}, bestScorePct: 90, perfectClearCount: 1}}, dojoProgress: {}},
   localStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)},
