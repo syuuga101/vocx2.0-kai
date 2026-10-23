@@ -524,14 +524,14 @@ button, input, select, textarea { font-family: 'Noto Sans Indic Siyaq Numbers En
   left: 0;
   right: 0;
   bottom: 0;
-  min-height: calc(60px + var(--safe-bottom));
+  min-height: calc(64px + var(--safe-bottom));
   background-color: var(--bg-dark);
   border-radius: 40px 40px 0 0;
   z-index: 30;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 15px 28% calc(12px + var(--safe-bottom)) 28%;
+  padding: 6px 28% calc(6px + var(--safe-bottom)) 28%;
   touch-action: none;
 }
 
@@ -550,10 +550,10 @@ button, input, select, textarea { font-family: 'Noto Sans Indic Siyaq Numbers En
 
 .nav-btn i {
   color: var(--text-light);
-  font-size: 29px;
-  line-height: 31px;
-  width: 29px;
-  height: 31px;
+  font-size: 24px;
+  line-height: 26px;
+  width: 26px;
+  height: 26px;
 }
 
 #icon-home-inactive { opacity: 0.55; }
@@ -1247,9 +1247,9 @@ button:focus-visible, input:focus-visible {
 .face-tab[aria-pressed="true"] { background: var(--pink-accent); color: #11232c; box-shadow: 0 3px 0 var(--pink-shadow); }
 .unit-row:focus-visible { outline: 3px solid var(--pink-accent); outline-offset: 8px; border-radius: 16px; }
 .unit-row { cursor: pointer; }
-.nav-btn { flex-direction: column; gap: 5px; color: var(--text-light); min-width: 68px; opacity: .6; }
+.nav-btn { flex-direction: column; gap: 2px; color: var(--text-light); min-width: 68px; opacity: .6; }
 .nav-btn[aria-current="page"] { opacity: 1; }
-.nav-label { font-size: 14px; line-height: 15px; white-space: nowrap; }
+.nav-label { font-size: 12px; line-height: 14px; white-space: nowrap; }
 .bottom-footer { justify-content: space-evenly; padding-left: 12%; padding-right: 12%; }
 
 /* Muted surfaces keep the coral accent focused on actions and selection. */
