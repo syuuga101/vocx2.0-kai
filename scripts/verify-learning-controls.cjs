@@ -29,13 +29,16 @@ c.stopStudyClock(); now = 200000; c.recordStudyTime();
 assert.equal(timer.textContent, '01:14', 'pause time is excluded');
 
 const elements = {};
-const el = id => elements[id] ||= {style: {}, value: '', innerHTML: '', textContent: '', listeners: {}, addEventListener(type, fn) {this.listeners[type] = fn}, focus() {}};
+const el = id => elements[id] ||= {style: {}, value: '', innerHTML: '', textContent: '', listeners: {}, setCustomValidity(){}, addEventListener(type, fn) {this.listeners[type] = fn}, focus() {}};
 const q = {kind: 'vocx-eng-type', rawItem: {word: 'arise', inflected: 'arose', sentence: 'Difficulties arose yesterday.', def: 'To arise is to happen.'}};
 const r = {desktopUI: null,cancelChoicePress: null,currentSession: {questions: [q], currentIndex: 0}, appState: {settings: {initialHint: false}}, document: {getElementById: el}, startQuestionClock() {}, updateProgressBar() {}, closeCheckSheet() {}, resetSlideThumb() {}, syncSlideAvailability() {}, escapeHtml: s => s, setTimeout() {}, submitTypeAnswer() {}};
 vm.createContext(r);
 vm.runInContext(js.slice(js.indexOf('  function buildBlankedSentence'), js.indexOf('  function startVocxQuiz')), r);
 vm.runInContext(js.slice(js.indexOf('  function renderCurrentQuestion'), js.indexOf('  function escapeHtml')), r);
 r.renderCurrentQuestion();
+let queuedDrafts=0;r.queueQuizCheckpoint=()=>queuedDrafts++;
+el('type-native-input').value='aro';el('type-native-input').listeners.input();
+assert.equal(r.currentSession.typedText,'aro');assert.equal(queuedDrafts,1,'typing schedules a recoverable draft');
 let checkpoints = 0;
 r.playSound = () => {};
 r.saveQuizCheckpoint = () => checkpoints++;

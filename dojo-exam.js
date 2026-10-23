@@ -284,7 +284,10 @@
     root.addEventListener('change',event=>{if(event.target.matches('select[data-exam-index]'))updateAnswer(event.target,true);});
     root.addEventListener('keydown',event=>{
       if(event.key==='Enter' && event.target.matches('input[data-exam-index]')){
-        event.preventDefault();updateAnswer(event.target,true);
+        if(event.isComposing || event.keyCode===229)return;
+        event.preventDefault();
+        if(event.repeat || phase!=='running')return;
+        updateAnswer(event.target,true);
         const next=Number(event.target.dataset.examIndex)+1;
         root.querySelector('#exam-answer-'+next)?.focus();
       }

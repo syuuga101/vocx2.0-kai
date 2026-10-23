@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const source=fs.readFileSync('app.js','utf8');
 const start=source.indexOf('  function syncViewportHeight()');
-const end=source.indexOf('  /* Prevent root',start);
+const end=source.indexOf('  /* Allow any real scroll container',start);
 assert(start>=0&&end>start);
 let height='';
 const c={window:{innerHeight:844,screen:{height:900},scrollX:0,scrollY:0},document:{documentElement:{clientHeight:844,style:{setProperty(name,value){if(name==='--app-height')height=value;}}}}};

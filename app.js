@@ -23,6 +23,8 @@
   };
 
   let appState = loadState();
+  let savedStateSnapshot = JSON.stringify(appState);
+  let lastSavedRaw = null;
   let vocxUnitsData = Object.assign({}, window.VOCX_FALLBACK_DATA || {});
   let dojoUnitsData = Object.assign({}, window.DOJO_FALLBACK_DATA || {});
   let currentSession = null;
@@ -35,6 +37,7 @@
   let studyTick = 0;
   let countdownTick = 0;
   let desktopUI = null;
+  let quizDraftTimer = null;
 
   function formatStudyTime(ms) {
     const seconds = Math.floor(ms / 1000);
@@ -121,10 +124,31 @@
   function saveState() {
     if (debugSandbox) return true;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      const latestRaw = localStorage.getItem(STORAGE_KEY);
+      if (latestRaw && latestRaw !== lastSavedRaw) {
+        try { mergeProgressState(appState, JSON.parse(savedStateSnapshot), JSON.parse(latestRaw)); } catch {}
+      }
+      const raw = JSON.stringify(appState);
+      localStorage.setItem(STORAGE_KEY, raw);
+      lastSavedRaw = savedStateSnapshot = raw;
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  function mergeProgressState(local, baseline, latest) {
+    // Preserve other tabs' Units when this tab has not edited them. Changes to
+    // the same Unit follow normal last-save-wins behavior; navigation stays local.
+    for (const key of ['vocxProgress', 'dojoProgress', 'dojoExamProgress']) {
+      const before = baseline?.[key] || {}, current = local[key] || {}, remote = latest?.[key];
+      if (!remote || typeof remote !== 'object' || Array.isArray(remote)) continue;
+      const merged = {...remote};
+      for (const id of new Set([...Object.keys(before), ...Object.keys(current)])) {
+        if (JSON.stringify(current[id]) === JSON.stringify(before[id])) continue;
+        if (Object.hasOwn(current,id)) merged[id] = current[id]; else delete merged[id];
+      }
+      local[key] = merged;
     }
   }
 
@@ -874,7 +898,13 @@
     }
   }
 
-  /* Prevent root window scrolling/bouncing when touching the navigation bar, header, Mypage, or overscrolling */
+  /* Allow any real scroll container, including Dojo and dialogs; only block root bounce. */
+  function touchScrollContainer(target) {
+    for (let element = target; element && element !== document.body; element = element.parentElement) {
+      if (element.scrollHeight > element.clientHeight + 1 && /^(auto|scroll)$/.test(getComputedStyle(element).overflowY)) return element;
+    }
+    return null;
+  }
   let lastTouchY = 0;
   document.addEventListener('touchstart', e => {
     if (e.touches && e.touches.length === 1) {
@@ -886,7 +916,10 @@
     if (e.touches && e.touches.length > 1) {
       return;
     }
-    const scrollEl = e.target.closest('.units-scroll, .quiz-content, .unit-mode-dialog, .check-sheet, .results-screen, .mypage-body, .debug-panel');
+    const curY = e.touches && e.touches.length ? e.touches[0].clientY : lastTouchY;
+    const dy = curY - lastTouchY;
+    lastTouchY = curY;
+    const scrollEl = touchScrollContainer(e.target);
     if (!scrollEl) {
       // Touched navigation bar (.bottom-footer), header (.app-header), Mypage, modals, etc. -> block page scroll
       if (e.cancelable) e.preventDefault();
@@ -896,10 +929,6 @@
       if (e.cancelable) e.preventDefault();
       return;
     }
-    const curY = e.touches && e.touches.length ? e.touches[0].clientY : lastTouchY;
-    const dy = curY - lastTouchY;
-    lastTouchY = curY;
-
     // Prevent scroll-chaining to the root window at top and bottom boundaries
     if (dy > 0 && scrollEl.scrollTop <= 0) {
       if (e.cancelable) e.preventDefault();
@@ -1034,6 +1063,7 @@
         if (!currentSession) return;
         inputEl.setCustomValidity('');
         currentSession.typedText = inputEl.value;
+        queueQuizCheckpoint();
       });
       formEl.addEventListener('click', e => {
         if (e.target !== inputEl && !e.target.closest('#type-submit-btn')) {
@@ -1363,6 +1393,15 @@
     const entry = map[unitId] ||= { clearedModes: {}, bestScorePct: 0, pausedSession: null };
     entry.pausedSession = structuredClone(currentSession);
     saveState();
+  }
+
+  function queueQuizCheckpoint() {
+    clearTimeout(quizDraftTimer);
+    const owner = currentSession, index = owner?.currentIndex;
+    quizDraftTimer = setTimeout(() => {
+      quizDraftTimer = null;
+      if (currentSession === owner && currentSession?.currentIndex === index) saveQuizCheckpoint();
+    }, 250);
   }
 
   function pauseQuizSession() {
@@ -1752,6 +1791,9 @@
     renderHomeUnits();
   });
   syncViewportHeight();
+  // Mobile browsers can suspend or discard the page without a quit-button click.
+  window.addEventListener('pagehide', saveQuizCheckpoint);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveQuizCheckpoint(); });
   desktopUI = window.DesktopUI?.create({
     session: () => currentSession,
     checkpoint: saveQuizCheckpoint,

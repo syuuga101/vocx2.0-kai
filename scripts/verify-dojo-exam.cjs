@@ -53,6 +53,10 @@ function ready(){for(let i=0;i<3;i++)flush();assert.equal(nodes['.exam-countdown
 function field(index,value,select=false){return {dataset:{examIndex:String(index)},value,matches:selector=>select?selector.startsWith('select'):selector.startsWith('input')};}
 let view=api.create(options);view.renderLauncher(launcher);assert(launcher.innerHTML.includes('教材未追加: Unit 28'));
 view.launch(20);assert(open);assert(!progress['20-21']);ready();assert.equal(progress['20-21'].exam.remainingMs,api.DURATION,'preparation/countdown must not consume exam time');
+const beforeKeyWrites=writes;
+handlers.keydown({key:'Enter',isComposing:true,target:field(8,'変換中'),preventDefault(){throw Error('IME owns Enter');}});
+handlers.keydown({key:'Enter',repeat:true,target:field(8,'held key'),preventDefault(){}});
+assert.equal(writes,beforeKeyWrites,'composition and held Enter must not save or advance Dojo input');
 handlers.change({target:field(0,'draft-select',true)});handlers.input({target:field(8,'draft-text')});time+=5000;
 node('.exam-scroll').scrollTop=345;view.close();assert(open);assert(nodes['.exam-exit-dialog'].open);assert.equal(clocks.size,0);
 time+=10000;click('data-exam-keep');assert.equal(clocks.size,1);time+=1000;view.close();click('data-exam-pause');assert(!open);

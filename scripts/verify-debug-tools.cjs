@@ -7,7 +7,7 @@ let writes = 0;
 const c = {
   appState: structuredClone(initial), defaultState: initial, structuredClone,
   debugProgress: null, debugSandbox: {original: structuredClone(initial), skipCountdown: true}, currentSession: null,
-  STORAGE_KEY: 'test', localStorage: {setItem() {writes++;}},
+  STORAGE_KEY: 'test', lastSavedRaw:null, savedStateSnapshot:'{}', localStorage: {getItem(){return null;},setItem() {writes++;}},
   document: {getElementById: el}, quitModal: el('quit'), nameModal: el('name'), modeDialog: {open: false},
   MODE_OPTIONS: {vocx: [{id: 'jpn-eng', accessibleLabel: '日本語'}, {id: 'eng-type', accessibleLabel: '入力'}], dojo: [{id: 'part1', accessibleLabel: 'Part 1'}]},
   vocxUnitsData: {'02': [dataItem], '03': [dataItem]}, dojoUnitsData: {'01': {part1: {}}},

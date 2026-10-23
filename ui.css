@@ -1117,7 +1117,7 @@ button:focus-visible, input:focus-visible {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
 }
 
 .modal-overlay.open {
@@ -1128,6 +1128,10 @@ button:focus-visible, input:focus-visible {
   width: 316px;
   max-width: 100%;
   min-height: 212px;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex-shrink: 0;
   background-color: var(--bg-dark);
   border-radius: 34px;
   padding: 40px 14px 22px 14px;
@@ -1136,6 +1140,10 @@ button:focus-visible, input:focus-visible {
   justify-content: space-between;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
   animation: modalPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.quit-modal-card > * { flex-shrink: 0; }
+@media (max-height: 400px) {
+  .modal-overlay .quit-modal-card { min-height: 0 !important; }
 }
 
 @keyframes modalPop {
@@ -1526,6 +1534,7 @@ button:focus-visible, input:focus-visible {
 .exam-primary { min-height: 44px; border: 1px solid #999; border-radius: 2px; background: #eee; color: #333; font-size: 15px; padding: 8px 14px; cursor: pointer; flex-shrink: 0; }
 .dojo-exam-screen button:focus-visible, .dojo-exam-screen input:focus-visible, .dojo-exam-screen select:focus-visible { outline: 2px solid #1564b5; outline-offset: 2px; }
 .exam-confirm { width: min(340px, calc(100vw - 32px)); margin: auto; padding: 24px; color: #222b32; background: #fff; border: 1px solid #d6dbe0; border-radius: 12px; }
+.exam-confirm { max-height: calc(var(--app-height) - 32px); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y pinch-zoom; }
 .exam-confirm::backdrop { background: rgba(10,20,28,.55); }
 .exam-confirm h2 { font-size: 20px; }
 .exam-confirm p { font-size: 14px; line-height: 1.8; margin-top: 16px; }
